@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abhishek's Vehicle Portfolio — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    /* ═══════ ROOT COLOUR PALETTE — Mixed & Vibrant ═══════ */
+    :root {
+      --bg1:  #0d1117;   /* deep charcoal */
+      --bg2:  #141b2d;   /* midnight blue */
+      --bg3:  #1a2540;   /* steel blue */
+      --teal:   #00c9a7;
+      --cyan:   #00d4ff;
+      --violet: #7c4dff;
+      --amber:  #ffb300;
+      --orange: #ff6d00;
+      --rose:   #ff4081;
+      --green:  #00e676;
+      --red:    #ff1744;
+      --white:  #f0f6ff;
+      --muted:  #8899bb;
+    }
+
+    html, body { width:100%; min-height:100%; font-family:'Inter',sans-serif; background:var(--bg1); color:var(--white); }
+
+    /* ───── ANIMATED GRADIENT BACKGROUND ───── */
+    body::before {
+      content:'';
+      position:fixed; inset:0; z-index:0;
+      background: linear-gradient(135deg,
+        #0d1117 0%,
+        #0e1a30 20%,
+        #150d2a 40%,
+        #0a1e1a 60%,
+        #1a1000 80%,
+        #0d1117 100%);
+      background-size: 400% 400%;
+      animation: bgShift 12s ease infinite;
+    }
+    @keyframes bgShift {
+      0%   { background-position: 0%   50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0%   50%; }
+    }
+
+    /* Subtle dot grid */
+    body::after {
+      content:'';
+      position:fixed; inset:0; z-index:0;
+      background-image: radial-gradient(rgba(0,212,255,0.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events:none;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TOP HEADER — "Abhishek's Vehicle Portfolio" in 3D
+       ═══════════════════════════════════════════════════ */
+    .site-header {
+      position:relative; z-index:20;
+      width:100%;
+      padding: 30px 40px 24px;
+      background: linear-gradient(180deg,
+        rgba(13,17,23,0.97) 0%,
+        rgba(13,17,23,0.85) 100%);
+      border-bottom: 1px solid rgba(255,179,0,0.2);
+      text-align:center;
+    }
+
+    /* Coloured accent top bar */
+    .header-stripe {
+      position:absolute; top:0; left:0; right:0; height:4px;
+      background: linear-gradient(90deg,
+        var(--violet) 0%, var(--cyan) 25%,
+        var(--teal)   50%, var(--amber) 75%,
+        var(--rose)   100%);
+    }
+
+    .site-title {
+      font-family:'Orbitron', sans-serif;
+      font-size: clamp(1.6rem, 4.2vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      /* Multi-colour gradient fill */
+      background: linear-gradient(90deg,
+        #00c9a7 0%,   /* teal */
+        #00d4ff 18%,  /* cyan */
+        #ffffff 35%,  /* white peak */
+        #ffb300 52%,  /* amber */
+        #ff6d00 68%,  /* orange */
+        #ff4081 84%,  /* rose */
+        #7c4dff 100%);/* violet */
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      /* 3D depth shadow (using filter + pseudo trick via a wrapper) */
+      filter:
+        drop-shadow(2px 3px 0px rgba(0,0,0,0.8))
+        drop-shadow(4px 5px 0px rgba(0,0,0,0.5))
+        drop-shadow(0 0 20px rgba(0,212,255,0.25))
+        drop-shadow(0 0 40px rgba(255,179,0,0.15));
+      line-height:1.15;
+      user-select:none;
+    }
+
+    .site-subtitle {
+      font-family:'Rajdhani', sans-serif;
+      font-size: clamp(0.65rem, 1.3vw, 0.9rem);
+      color: rgba(136,153,187,0.75);
+      letter-spacing: 7px;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+
+    .header-accent {
+      width: 240px; height: 2px;
+      margin: 14px auto 0;
+      background: linear-gradient(90deg, transparent, var(--cyan), var(--amber), transparent);
+    }
+
+    /* ═══════════════════════════
+       MAIN — Two column
+       ═══════════════════════════ */
+    .login-main {
+      position:relative; z-index:10;
+      display:grid;
+      grid-template-columns: 1fr 500px;
+      min-height: calc(100vh - 118px);
+    }
+
+    /* ─── LEFT VISUAL PANEL ─── */
+    .visual-panel {
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding: 50px 44px 130px;
+      overflow:hidden;
+    }
+
+    /* Coloured orb glows behind the truck */
+    .orb { position:absolute; border-radius:50%; filter:blur(80px); opacity:0.18; pointer-events:none; }
+    .orb-1 { width:400px; height:400px; background:var(--cyan);   top:5%;    left:-5%; }
+    .orb-2 { width:350px; height:350px; background:var(--violet); bottom:10%; right:5%; }
+    .orb-3 { width:300px; height:300px; background:var(--teal);   top:50%;   left:40%; }
+
+    /* SVG Truck */
+    .truck-svg {
+      width: min(520px, 90%);
+      margin-bottom: 40px;
+      filter: drop-shadow(0 24px 48px rgba(0,0,0,0.7));
+      animation: floatTruck 5s ease-in-out infinite;
+      position:relative; z-index:2;
+    }
+    @keyframes floatTruck {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-14px); }
+    }
+
+    /* Feature grid */
+    .feature-grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+      width:100%;
+      max-width:480px;
+      position:relative; z-index:2;
+    }
+
+    .feat {
+      display:flex; align-items:center; gap:10px;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s;
+    }
+    .feat:hover {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.3);
+      transform: translateY(-2px);
+    }
+    .feat-icon {
+      width:30px; height:30px; border-radius:7px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.9rem; flex-shrink:0;
+    }
+    .fi-1 { background:rgba(0,201,167,0.15); }
+    .fi-2 { background:rgba(0,212,255,0.15); }
+    .fi-3 { background:rgba(124,77,255,0.15); }
+    .fi-4 { background:rgba(255,179,0,0.15); }
+    .fi-5 { background:rgba(255,109,0,0.15); }
+    .fi-6 { background:rgba(255,64,129,0.15); }
+    .feat-label {
+      font-size:0.75rem;
+      color: rgba(240,246,255,0.7);
+      font-weight:500;
+      line-height:1.3;
+    }
+
+    /* Stats bar bottom of left panel */
+    .stats-bar {
+      position:absolute; bottom:0; left:0; right:0;
+      display:flex; justify-content:space-around;
+      padding: 14px 30px;
+      background: rgba(10,14,22,0.75);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+    }
+    .stat { text-align:center; }
+    .stat .n {
+      font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700;
+      background: linear-gradient(90deg, var(--cyan), var(--teal));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .stat .l {
+      font-size:0.62rem; color:var(--muted);
+      letter-spacing:1.5px; text-transform:uppercase; margin-top:2px;
+    }
+
+    /* ─── RIGHT FORM PANEL ─── */
+    .form-panel {
+      position:relative;
+      background: linear-gradient(160deg, #111827 0%, #0e1a2e 50%, #13101f 100%);
+      border-left: 1px solid rgba(255,255,255,0.07);
+      display:flex; align-items:center; justify-content:center;
+      padding: 40px 44px;
+      overflow:hidden;
+    }
+
+    /* Coloured side stripe on form panel */
+    .form-panel::before {
+      content:'';
+      position:absolute; top:0; left:0; bottom:0; width:4px;
+      background: linear-gradient(180deg,
+        var(--cyan) 0%, var(--teal) 33%, var(--amber) 66%, var(--rose) 100%);
+    }
+
+    /* Subtle glow inside form panel */
+    .form-panel::after {
+      content:'';
+      position:absolute; top:-100px; right:-80px;
+      width:300px; height:300px; border-radius:50%;
+      background: radial-gradient(circle, rgba(124,77,255,0.12) 0%, transparent 70%);
+      pointer-events:none;
+    }
+
+    .login-box {
+      width:100%; max-width:390px;
+      position:relative; z-index:2;
+      display:flex; flex-direction:column;
+    }
+
+    /* ── Form logo row ── */
+    .form-logo {
+      display:flex; align-items:center; gap:14px;
+      margin-bottom:28px; padding-bottom:22px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .form-logo-icon {
+      width:50px; height:50px; border-radius:12px;
+      background: linear-gradient(135deg, #1e2d50, #14203a);
+      border: 1px solid rgba(0,212,255,0.3);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4),
+                  0 0 12px rgba(0,212,255,0.1);
+    }
+    .form-logo-texts h2 {
+      font-family:'Orbitron',sans-serif; font-size:0.82rem;
+      background: linear-gradient(90deg, var(--cyan), var(--amber));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      letter-spacing:2px; text-transform:uppercase; margin-bottom:3px;
+    }
+    .form-logo-texts p {
+      font-size:0.72rem; color:var(--muted); letter-spacing:1px;
+    }
+
+    /* ── Section divider ── */
+    .sect-label {
+      font-size:0.68rem; color:var(--muted);
+      letter-spacing:3px; text-transform:uppercase;
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:20px;
+    }
+    .sect-label::after {
+      content:''; flex:1; height:1px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    /* ── Input fields ── */
+    .field { margin-bottom:17px; }
+    .field-label {
+      display:block; font-size:0.7rem; font-weight:600;
+      color:var(--muted); letter-spacing:2px;
+      text-transform:uppercase; margin-bottom:8px;
+    }
+    .field-wrap { position:relative; }
+    .field-ico {
+      position:absolute; left:15px; top:50%;
+      transform:translateY(-50%);
+      color:rgba(100,120,160,0.8);
+      display:flex; align-items:center;
+      pointer-events:none;
+    }
+    .field-input {
+      width:100%;
+      padding: 13px 16px 13px 46px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius:10px;
+      color:var(--white);
+      font-family:'Inter',sans-serif; font-size:0.95rem;
+      outline:none; transition:all 0.25s;
+    }
+    .field-input:focus {
+      border-color: var(--cyan);
+      background: rgba(0,212,255,0.06);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+    }
+    .field-input::placeholder { color:rgba(136,153,187,0.38); }
+    .eye-btn {
+      position:absolute; right:13px; top:50%;
+      transform:translateY(-50%);
+      background:none; border:none; cursor:pointer;
+      color:var(--muted); padding:4px;
+      transition:color 0.2s; display:flex; align-items:center;
+    }
+    .eye-btn:hover { color:var(--cyan); }
+
+    /* ── Error box ── */
+    .err-box {
+      display:none; align-items:center; gap:10px;
+      background: rgba(255,23,68,0.1);
+      border: 1px solid rgba(255,23,68,0.3);
+      border-left: 3px solid var(--red);
+      border-radius:9px; padding:11px 14px;
+      color:#ff7096; font-size:0.84rem; margin-bottom:14px;
+    }
+    .err-box.show { display:flex; }
+
+    /* ── Login button — multi-colour gradient ── */
+    .login-btn {
+      width:100%; padding:14px; margin-top:4px;
+      background: linear-gradient(90deg,
+        #00c9a7 0%, #00d4ff 40%, #7c4dff 100%);
+      border:none; border-radius:10px;
+      color:#fff;
+      font-family:'Orbitron',sans-serif;
+      font-size:0.82rem; font-weight:700;
+      letter-spacing:3px; text-transform:uppercase;
+      cursor:pointer; position:relative; overflow:hidden;
+      transition:all 0.3s;
+      box-shadow: 0 4px 20px rgba(0,212,255,0.3),
+                  0 2px 8px rgba(124,77,255,0.3);
+    }
+    .login-btn::before {
+      content:'';
+      position:absolute; top:0; left:-100%; width:100%; height:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .login-btn:hover::before { left:100%; }
+    .login-btn:hover {
+      background: linear-gradient(90deg, #00e5c0 0%, #33ddff 40%, #9b6fff 100%);
+      box-shadow: 0 6px 28px rgba(0,212,255,0.5), 0 3px 12px rgba(124,77,255,0.4);
+      transform: translateY(-2px);
+    }
+    .login-btn:active { transform:translateY(0); }
+    .login-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+    /* ── Credentials hint ── */
+    .creds-hint {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius:9px; padding:11px 14px; margin-top:16px;
+    }
+    .creds-hint p {
+      font-size:0.74rem; color:var(--muted); line-height:1.7;
+    }
+    .creds-hint strong { color:var(--amber); font-weight:600; }
+
+    /* ══════════════════════════════════════════
+       QUOTE + WELCOME — bottom of form panel
+       ══════════════════════════════════════════ */
+    .bottom-section {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+    }
+
+    /* The motivational quote — 3D mixed light green + red */
+    .motivational-quote {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(0.82rem, 1.5vw, 1.05rem);
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1.55;
+      margin-bottom: 16px;
+      /* Alternating word colours: green + red + green etc. */
+    }
+
+    /* Each word span coloured alternately green / red with 3D shadow */
+    .q-green {
+      color: #69ff85;
+      text-shadow:
+        1px 1px 0 #1a8030,
+        2px 2px 0 #126022,
+        3px 3px 4px rgba(0,0,0,0.5),
+        0 0 10px rgba(105,255,133,0.3);
+      display:inline-block;
+    }
+    .q-red {
+      color: #ff6b6b;
+      text-shadow:
+        1px 1px 0 #991010,
+        2px 2px 0 #700a0a,
+        3px 3px 4px rgba(0,0,0,0.5),
+        0 0 10px rgba(255,107,107,0.3);
+      display:inline-block;
+    }
+
+    /* "WELCOME" big text at the very bottom */
+    .welcome-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      /* Mixed green + red gradient */
+      background: linear-gradient(90deg,
+        #69ff85 0%,
+        #a0ffb0 20%,
+        #ffffff 40%,
+        #ffaaaa 60%,
+        #ff6b6b 80%,
+        #ff3333 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      /* 3D depth */
+      filter:
+        drop-shadow(1px 2px 0px rgba(0,0,0,0.8))
+        drop-shadow(3px 4px 0px rgba(0,0,0,0.5))
+        drop-shadow(0 0 16px rgba(105,255,133,0.2))
+        drop-shadow(0 0 20px rgba(255,107,107,0.2));
+      animation: welcomePulse 3s ease-in-out infinite;
+    }
+
+    @keyframes welcomePulse {
+      0%,100% { filter:
+        drop-shadow(1px 2px 0px rgba(0,0,0,0.8))
+        drop-shadow(3px 4px 0px rgba(0,0,0,0.5))
+        drop-shadow(0 0 16px rgba(105,255,133,0.25))
+        drop-shadow(0 0 20px rgba(255,107,107,0.25));
+      }
+      50% { filter:
+        drop-shadow(1px 2px 0px rgba(0,0,0,0.8))
+        drop-shadow(3px 4px 0px rgba(0,0,0,0.5))
+        drop-shadow(0 0 30px rgba(105,255,133,0.5))
+        drop-shadow(0 0 35px rgba(255,107,107,0.5));
+      }
+    }
+
+    .form-footer {
+      text-align:center; margin-top:10px;
+      font-size:0.68rem;
+      color:rgba(136,153,187,0.3);
+      letter-spacing:0.5px;
+    }
+
+    /* ═══════ RESPONSIVE ═══════ */
+    @media (max-width:960px) {
+      .login-main { grid-template-columns:1fr; }
+      .visual-panel { display:none; }
+      .form-panel {
+        border-left:none;
+        padding: 40px 24px;
+        min-height: calc(100vh - 118px);
+      }
+    }
+    @media (max-width:480px) {
+      .site-header { padding:20px 16px 16px; }
+      .site-title { letter-spacing:2px; }
+      .form-panel { padding:28px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════
+       HEADER — 3D multi-colour title at top
+       ══════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="header-stripe"></div>
+    <h1 class="site-title">Abhishek's Vehicle Portfolio</h1>
+    <p class="site-subtitle">Professional Fleet Management System</p>
+    <div class="header-accent"></div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       MAIN
+       ══════════════════════════════════════════ -->
+  <div class="login-main">
+
+    <!-- ════════ LEFT VISUAL PANEL ════════ -->
+    <div class="visual-panel">
+      <!-- Coloured orb blurs -->
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+
+      <!-- Realistic Truck SVG -->
+      <svg class="truck-svg" viewBox="0 0 720 310" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Road shadow -->
+        <ellipse cx="360" cy="292" rx="350" ry="13" fill="rgba(0,0,0,0.45)"/>
+
+        <!-- ── TRAILER ── -->
+        <rect x="15" y="108" width="430" height="148" rx="6" fill="url(#tGrad)"/>
+        <rect x="15" y="108" width="430" height="7"   rx="3" fill="url(#tRoof)"/>
+        <!-- Side ribs -->
+        <line x1="85"  y1="117" x2="85"  y2="255" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+        <line x1="155" y1="117" x2="155" y2="255" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+        <line x1="225" y1="117" x2="225" y2="255" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+        <line x1="295" y1="117" x2="295" y2="255" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+        <line x1="365" y1="117" x2="365" y2="255" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+        <!-- Brand stripe on trailer -->
+        <rect x="17"  y="175" width="426" height="30" fill="rgba(0,212,255,0.06)"/>
+        <line x1="17" y1="175" x2="443" y2="175" stroke="rgba(0,212,255,0.25)" stroke-width="1.5"/>
+        <line x1="17" y1="205" x2="443" y2="205" stroke="rgba(0,212,255,0.25)" stroke-width="1.5"/>
+        <!-- Trailer door -->
+        <rect x="358" y="118" width="79" height="129" rx="2" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+        <line x1="397" y1="118" x2="397" y2="247" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <rect x="360" y="158" width="5" height="12" rx="1" fill="rgba(0,0,0,0.35)"/>
+        <rect x="360" y="205" width="5" height="12" rx="1" fill="rgba(0,0,0,0.35)"/>
+        <rect x="431" y="158" width="5" height="12" rx="1" fill="rgba(0,0,0,0.35)"/>
+        <rect x="431" y="205" width="5" height="12" rx="1" fill="rgba(0,0,0,0.35)"/>
+        <!-- Bottom frame -->
+        <rect x="13"  y="252" width="432" height="13" rx="3" fill="#12243a"/>
+        <rect x="405" y="256" width="42"  height="20" rx="3" fill="#0c1a2c"/>
+
+        <!-- ── CAB ── -->
+        <rect x="448" y="138" width="218" height="118" rx="8" fill="url(#cGrad)"/>
+        <!-- Roof -->
+        <path d="M462 138 L462 104 Q464 86 482 82 L608 82 Q660 82 668 106 L668 138 Z" fill="url(#cRoof)"/>
+        <!-- Roof visor bar -->
+        <rect x="462" y="82" width="206" height="12" rx="4" fill="#0a1625"/>
+        <!-- Running lights on visor -->
+        <circle cx="478" cy="88" r="4" fill="rgba(255,109,0,0.8)"/>
+        <circle cx="492" cy="88" r="4" fill="rgba(255,179,0,0.7)"/>
+        <circle cx="506" cy="88" r="4" fill="rgba(0,230,118,0.7)"/>
+        <circle cx="650" cy="88" r="4" fill="rgba(255,109,0,0.8)"/>
+        <circle cx="636" cy="88" r="4" fill="rgba(255,179,0,0.7)"/>
+        <circle cx="622" cy="88" r="4" fill="rgba(0,230,118,0.7)"/>
+        <!-- Windshield -->
+        <path d="M483 89 L481 130 L662 130 L662 93 Q659 85 647 85 L498 85 Q485 85 483 89 Z" fill="url(#wGrad)" opacity="0.9"/>
+        <path d="M483 89 L481 130 L488 130 L490 93 Z" fill="#152240"/>
+        <path d="M656 87 L662 93 L662 130 L655 130 Z" fill="#152240"/>
+        <line x1="567" y1="87" x2="567" y2="130" stroke="rgba(0,0,0,0.35)" stroke-width="2.5"/>
+        <!-- Wiper -->
+        <line x1="504" y1="128" x2="548" y2="102" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="614" y1="128" x2="586" y2="102" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linecap="round"/>
+        <!-- Door outline -->
+        <rect x="453" y="147" width="98"  height="102" rx="4" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <!-- Side window -->
+        <rect x="460" y="152" width="55"  height="44" rx="4" fill="url(#swGrad)" opacity="0.8"/>
+        <!-- Door handle -->
+        <rect x="536" y="196" width="10"  height="18" rx="3" fill="rgba(200,180,80,0.55)"/>
+        <!-- Fuel tank -->
+        <rect x="449" y="202" width="22"  height="50" rx="5" fill="#0d1c32"/>
+        <rect x="451" y="204" width="18"  height="46" rx="4" fill="#122038"/>
+        <!-- Steps -->
+        <rect x="450" y="244" width="32"  height="8"  rx="2" fill="#0d1828"/>
+        <rect x="452" y="252" width="28"  height="6"  rx="2" fill="#09121e"/>
+        <!-- Exhaust -->
+        <rect x="662" y="58" width="12" height="72" rx="6" fill="#16263e"/>
+        <ellipse cx="668" cy="58" rx="6" ry="4" fill="#0a1626"/>
+        <circle cx="668" cy="46" r="7"  fill="rgba(255,255,255,0.05)"/>
+        <circle cx="665" cy="34" r="5.5" fill="rgba(255,255,255,0.035)"/>
+        <circle cx="672" cy="24" r="4"   fill="rgba(255,255,255,0.025)"/>
+        <!-- Front bumper -->
+        <rect x="656" y="228" width="38" height="20" rx="5" fill="#0e1c30"/>
+        <!-- Grill -->
+        <rect x="660" y="172" width="26" height="55" rx="5" fill="#0a1522"/>
+        <line x1="662" y1="182" x2="684" y2="182" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+        <line x1="662" y1="192" x2="684" y2="192" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+        <line x1="662" y1="202" x2="684" y2="202" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+        <line x1="662" y1="212" x2="684" y2="212" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+        <!-- Headlight -->
+        <rect x="659" y="150" width="28" height="20" rx="5" fill="url(#hlGrad)"/>
+        <rect x="662" y="153" width="22" height="14" rx="3" fill="rgba(255,245,180,0.15)"/>
+        <!-- Beam -->
+        <path d="M688 156 L730 142 L730 170 L688 168 Z" fill="url(#beamGrad)" opacity="0.15"/>
+        <!-- Turn signal -->
+        <rect x="659" y="172" width="16" height="9" rx="3" fill="rgba(255,160,0,0.65)"/>
+        <!-- Logo badge on cab -->
+        <rect x="462" y="170" width="76" height="28" rx="5" fill="rgba(0,0,0,0.3)"/>
+        <text x="500" y="188" font-family="Orbitron,sans-serif" font-size="9" font-weight="700"
+              fill="rgba(0,212,255,0.85)" text-anchor="middle" letter-spacing="1.5">FLEET</text>
+
+        <!-- ── TRAILER WHEELS ── -->
+        <ellipse cx="78"  cy="276" rx="34" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <ellipse cx="152" cy="276" rx="34" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <ellipse cx="292" cy="276" rx="34" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <ellipse cx="366" cy="276" rx="34" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <circle cx="78"  cy="265" r="28" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="152" cy="265" r="28" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="292" cy="265" r="28" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="366" cy="265" r="28" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="78"  cy="265" r="17" fill="url(#riGrad)"/>
+        <circle cx="152" cy="265" r="17" fill="url(#riGrad)"/>
+        <circle cx="292" cy="265" r="17" fill="url(#riGrad)"/>
+        <circle cx="366" cy="265" r="17" fill="url(#riGrad)"/>
+        <circle cx="78"  cy="265" r="6"  fill="#1a2c48"/>
+        <circle cx="152" cy="265" r="6"  fill="#1a2c48"/>
+        <circle cx="292" cy="265" r="6"  fill="#1a2c48"/>
+        <circle cx="366" cy="265" r="6"  fill="#1a2c48"/>
+        <!-- Bolts -->
+        <circle cx="78"  cy="256" r="2.5" fill="#b0a060"/>
+        <circle cx="78"  cy="274" r="2.5" fill="#b0a060"/>
+        <circle cx="70"  cy="265" r="2.5" fill="#b0a060"/>
+        <circle cx="86"  cy="265" r="2.5" fill="#b0a060"/>
+
+        <!-- ── CAB WHEELS ── -->
+        <ellipse cx="510" cy="276" rx="32" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <ellipse cx="612" cy="276" rx="32" ry="8" fill="rgba(0,0,0,0.4)"/>
+        <circle cx="510" cy="265" r="27" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="612" cy="265" r="27" fill="url(#tyGrad)" stroke="#162035" stroke-width="2"/>
+        <circle cx="510" cy="265" r="16" fill="url(#riGrad)"/>
+        <circle cx="612" cy="265" r="16" fill="url(#riGrad)"/>
+        <circle cx="510" cy="265" r="6"  fill="#1a2c48"/>
+        <circle cx="612" cy="265" r="6"  fill="#1a2c48"/>
+        <circle cx="510" cy="257" r="2.2" fill="#b0a060"/>
+        <circle cx="510" cy="273" r="2.2" fill="#b0a060"/>
+        <circle cx="503" cy="265" r="2.2" fill="#b0a060"/>
+        <circle cx="517" cy="265" r="2.2" fill="#b0a060"/>
+        <circle cx="612" cy="257" r="2.2" fill="#b0a060"/>
+        <circle cx="612" cy="273" r="2.2" fill="#b0a060"/>
+        <circle cx="605" cy="265" r="2.2" fill="#b0a060"/>
+        <circle cx="619" cy="265" r="2.2" fill="#b0a060"/>
+
+        <defs>
+          <linearGradient id="tGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#1e3a6a"/>
+            <stop offset="50%"  stop-color="#162d55"/>
+            <stop offset="100%" stop-color="#0e1e38"/>
+          </linearGradient>
+          <linearGradient id="tRoof" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="rgba(0,212,255,0.5)"/>
+            <stop offset="30%"  stop-color="rgba(0,230,118,0.7)"/>
+            <stop offset="60%"  stop-color="rgba(255,179,0,0.8)"/>
+            <stop offset="100%" stop-color="rgba(255,64,129,0.5)"/>
+          </linearGradient>
+          <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#233a7a"/>
+            <stop offset="100%" stop-color="#0f2050"/>
+          </linearGradient>
+          <linearGradient id="cRoof" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#2c4898"/>
+            <stop offset="100%" stop-color="#1a3068"/>
+          </linearGradient>
+          <linearGradient id="wGrad" x1="0" y1="0" x2="0.4" y2="1">
+            <stop offset="0%"   stop-color="rgba(160,210,255,0.2)"/>
+            <stop offset="50%"  stop-color="rgba(100,170,240,0.12)"/>
+            <stop offset="100%" stop-color="rgba(50,110,200,0.07)"/>
+          </linearGradient>
+          <linearGradient id="swGrad" x1="0" y1="0" x2="0.3" y2="1">
+            <stop offset="0%"   stop-color="rgba(160,210,255,0.18)"/>
+            <stop offset="100%" stop-color="rgba(80,140,220,0.08)"/>
+          </linearGradient>
+          <radialGradient id="hlGrad" cx="35%" cy="40%" r="70%">
+            <stop offset="0%"   stop-color="rgba(255,245,180,0.95)"/>
+            <stop offset="100%" stop-color="rgba(220,200,80,0.3)"/>
+          </radialGradient>
+          <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="rgba(255,245,160,0.7)"/>
+            <stop offset="100%" stop-color="transparent"/>
+          </linearGradient>
+          <radialGradient id="tyGrad" cx="38%" cy="38%" r="65%">
+            <stop offset="0%"   stop-color="#28283a"/>
+            <stop offset="100%" stop-color="#0e0e18"/>
+          </radialGradient>
+          <radialGradient id="riGrad" cx="35%" cy="35%" r="70%">
+            <stop offset="0%"   stop-color="#4a6090"/>
+            <stop offset="60%"  stop-color="#2a4070"/>
+            <stop offset="100%" stop-color="#1a2c58"/>
+          </radialGradient>
+        </defs>
+      </svg>
+
+      <!-- Feature grid -->
+      <div class="feature-grid">
+        <div class="feat"><div class="feat-icon fi-1">🚛</div><div class="feat-label">Fleet Management</div></div>
+        <div class="feat"><div class="feat-icon fi-2">⛽</div><div class="feat-label">Diesel Tracking</div></div>
+        <div class="feat"><div class="feat-icon fi-3">🛣️</div><div class="feat-label">Trip Records</div></div>
+        <div class="feat"><div class="feat-icon fi-4">🔧</div><div class="feat-label">Service Alerts</div></div>
+        <div class="feat"><div class="feat-icon fi-5">📄</div><div class="feat-label">Bill Uploads</div></div>
+        <div class="feat"><div class="feat-icon fi-6">🔴</div><div class="feat-label">Live Updates</div></div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat"><div class="n">LIVE</div><div class="l">Real-Time</div></div>
+        <div class="stat"><div class="n">MySQL</div><div class="l">Database</div></div>
+        <div class="stat"><div class="n">AWS</div><div class="l">EC2 + S3</div></div>
+        <div class="stat"><div class="n">IST</div><div class="l">Timezone</div></div>
+      </div>
+
+    </div><!-- /visual-panel -->
+
+    <!-- ════════ RIGHT FORM PANEL ════════ -->
+    <div class="form-panel">
+      <div class="login-box">
+
+        <!-- Logo row -->
+        <div class="form-logo">
+          <div class="form-logo-icon">
+            <svg width="30" height="22" viewBox="0 0 32 22" fill="none">
+              <rect x="1" y="6" width="20" height="12" rx="2" fill="#2a5090"/>
+              <rect x="1" y="6" width="20" height="2.5" rx="1" fill="rgba(0,212,255,0.8)"/>
+              <path d="M21 9 L21 7 Q22 5 24 5 L28 5 Q30 5 31 7 L31 14 L21 14 Z" fill="#1e3878"/>
+              <rect x="22" y="6" width="8" height="7" rx="1" fill="rgba(160,210,255,0.25)"/>
+              <circle cx="6"  cy="19" r="3" fill="#111" stroke="#2a4060" stroke-width="1"/>
+              <circle cx="6"  cy="19" r="1.3" fill="#2a4070"/>
+              <circle cx="16" cy="19" r="3" fill="#111" stroke="#2a4060" stroke-width="1"/>
+              <circle cx="16" cy="19" r="1.3" fill="#2a4070"/>
+              <circle cx="27" cy="19" r="3" fill="#111" stroke="#2a4060" stroke-width="1"/>
+              <circle cx="27" cy="19" r="1.3" fill="#2a4070"/>
+            </svg>
+          </div>
+          <div class="form-logo-texts">
+            <h2>Vehicle Portfolio</h2>
+            <p>Secure access portal</p>
+          </div>
+        </div>
+
+        <!-- Divider label -->
+        <div class="sect-label">Sign In to Your Account</div>
+
+        <!-- Error -->
+        <div class="err-box" id="errorBox">
+          <span>⚠</span><span id="errorMsg">Invalid username or password.</span>
+        </div>
+
+        <!-- Username field -->
+        <div class="field">
+          <label class="field-label" for="username">Username</label>
+          <div class="field-wrap">
+            <span class="field-ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            <input class="field-input" type="text" id="username" name="username"
+              placeholder="Enter your username" autocomplete="username" required/>
+          </div>
+        </div>
+
+        <!-- Password field -->
+        <div class="field">
+          <label class="field-label" for="password">Password</label>
+          <div class="field-wrap">
+            <span class="field-ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input class="field-input" type="password" id="password" name="password"
+              placeholder="Enter your password" autocomplete="current-password" required/>
+            <button type="button" class="eye-btn" id="togglePwd">
+              <svg id="eyeIco" width="17" height="17" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Login button -->
+        <button class="login-btn" id="loginBtn">
+          <span id="btnText">Sign In</span>
+          <span id="btnSpin" style="display:none;">Authenticating…</span>
+        </button>
+
+        <!-- Creds hint -->
+        <div class="creds-hint">
+          <p>Default — <strong>admin</strong> / <strong>admin123</strong></p>
+          <p style="margin-top:3px;font-size:0.68rem;color:#3a4560;">Update credentials after first login.</p>
+        </div>
+
+        <!-- ══ QUOTE + WELCOME at bottom of form ══ -->
+        <div class="bottom-section">
+
+          <!-- Motivational quote — 3D light green + red alternating words -->
+          <div class="motivational-quote">
+            <span class="q-green">"I</span>&nbsp;
+            <span class="q-red">Never</span>&nbsp;
+            <span class="q-green">Dreamed</span>&nbsp;
+            <span class="q-red">About</span>&nbsp;
+            <span class="q-green">Success</span>&nbsp;<span class="q-red">.</span>&nbsp;
+            <span class="q-red">I</span>&nbsp;
+            <span class="q-green">Worked</span>&nbsp;
+            <span class="q-red">For</span>&nbsp;
+            <span class="q-green">It"</span>
+          </div>
+
+          <!-- WELCOME text -->
+          <div class="welcome-text">WELCOME</div>
+        </div>
+
+        <div class="form-footer">© 2025 Abhishek's Vehicle Portfolio</div>
+
+      </div><!-- /login-box -->
+    </div><!-- /form-panel -->
+
+  </div><!-- /login-main -->
+
+  <script src="js/config.js"></script>
+  <script>
+    // ── Toggle password visibility ──
+    const toggleBtn = document.getElementById('togglePwd');
+    const pwdInput  = document.getElementById('password');
+    const eyeIco    = document.getElementById('eyeIco');
+    toggleBtn.addEventListener('click', () => {
+      const show = pwdInput.type === 'password';
+      pwdInput.type = show ? 'text' : 'password';
+      eyeIco.innerHTML = show
+        ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+           <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+           <line x1="1" y1="1" x2="23" y2="23"/>`
+        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+           <circle cx="12" cy="12" r="3"/>`;
+    });
+
+    // ── Login logic ──
+    const loginBtn = document.getElementById('loginBtn');
+    const errBox   = document.getElementById('errorBox');
+    const errMsg   = document.getElementById('errorMsg');
+    const btnText  = document.getElementById('btnText');
+    const btnSpin  = document.getElementById('btnSpin');
+
+    function setLoad(on) {
+      loginBtn.disabled = on;
+      btnText.style.display = on ? 'none'   : 'inline';
+      btnSpin.style.display = on ? 'inline' : 'none';
+    }
+    function showErr(msg) { errMsg.textContent = msg; errBox.classList.add('show'); }
+    function hideErr()    { errBox.classList.remove('show'); }
+
+    // Enter key support
+    ['username','password'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') loginBtn.click();
+      });
+    });
+
+    loginBtn.addEventListener('click', async () => {
+      hideErr();
+      const username = document.getElementById('username').value.trim();
+      const password = pwdInput.value;
+
+      if (!username || !password) {
+        showErr('Please enter both username and password.'); return;
+      }
+
+      setLoad(true);
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user',  JSON.stringify(data.user));
+          window.location.href = 'dashboard.html';
+        } else {
+          showErr(data.message || 'Invalid username or password.');
+        }
+      } catch (err) {
+        showErr('Cannot reach server. Check your connection.');
+      } finally {
+        setLoad(false);
+      }
+    });
+
+    if (localStorage.getItem('token')) {
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>

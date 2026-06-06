@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trips — Abhishek's Vehicle Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+      <a href="dashboard.html" class="navbar-brand">
+        <span class="navbar-logo-icon">🚛</span>
+        <div>
+          <div class="navbar-logo-text">Abhishek's Vehicle Portfolio</div>
+          <span class="navbar-logo-sub">Fleet Management System</span>
+        </div>
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <span class="last-updated" id="lastUpdated"></span>
+      <div class="navbar-user"><div class="user-avatar" id="userAvatar">A</div><span class="user-name" id="userName">Admin</span></div>
+      <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-title">Main</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="add-vehicle.html" class="nav-item"><span class="nav-icon">➕</span> Add Vehicle</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Records</div>
+    <a href="trips.html" class="nav-item active"><span class="nav-icon">🛣️</span> Trips</a>
+    <a href="diesel.html" class="nav-item"><span class="nav-icon">⛽</span> Diesel Records</a>
+    <a href="service.html" class="nav-item"><span class="nav-icon">🔧</span> Service</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Documents</div>
+    <a href="uploads.html" class="nav-item"><span class="nav-icon">📁</span> Upload Bills</a>
+    <div class="sidebar-divider"></div>
+    <a href="#" class="nav-item" onclick="logout(); return false;"><span class="nav-icon">⏻</span> Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="text-gold">🛣️ Trips</h1>
+      <button class="btn btn-primary btn-sm" onclick="openAddTrip()">+ Add Trip</button>
+    </div>
+
+    <div id="tripAlert"></div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards" id="tripSummary">
+      <div class="summary-card">
+        <div class="value" id="summaryTotalTrips">0</div>
+        <div class="label">Total Trips</div>
+      </div>
+      <div class="summary-card">
+        <div class="value" id="summaryTotalToll">₹0</div>
+        <div class="label">Total Toll</div>
+      </div>
+      <div class="summary-card">
+        <div class="value" id="summaryTotalLoad">0 t</div>
+        <div class="label">Total Load</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <select class="form-control" id="filterVehicle" onchange="applyFilters()">
+        <option value="">All Vehicles</option>
+      </select>
+      <input type="date" class="form-control" id="filterDateFrom" onchange="applyFilters()" placeholder="From Date">
+      <input type="date" class="form-control" id="filterDateTo" onchange="applyFilters()" placeholder="To Date">
+      <input type="text" class="form-control" id="filterSource" oninput="applyFilters()" placeholder="Source city...">
+      <input type="text" class="form-control" id="filterDest" oninput="applyFilters()" placeholder="Destination city...">
+      <button class="btn btn-outline btn-sm" onclick="clearFilters()">✕ Clear</button>
+    </div>
+
+    <!-- Trips Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Date & Time</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Load (t)</th>
+            <th>Toll Up (₹)</th>
+            <th>Toll Down (₹)</th>
+            <th>Total Toll (₹)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tripsTableBody">
+          <tr>
+            <td colspan="10" style="text-align:center; padding:40px;">
+              <div class="spinner"></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add/Edit Trip Modal -->
+<div class="modal-overlay" id="tripModal">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="tripModalTitle" style="font-family:'Orbitron',sans-serif; font-size:0.9rem; color:var(--accent-gold); letter-spacing:2px; text-transform:uppercase;">🛣️ Add Trip</h3>
+      <button class="modal-close" onclick="closeTripModal()">×</button>
+    </div>
+    <form id="tripForm" novalidate>
+      <input type="hidden" id="tripId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="tripVehicle">Vehicle *</label>
+          <select id="tripVehicle" class="form-control" required>
+            <option value="">Select vehicle</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tripDate">Trip Date & Time *</label>
+          <input type="datetime-local" id="tripDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="tripSource">Source Address/City *</label>
+          <input type="text" id="tripSource" class="form-control" placeholder="e.g. Mumbai, Maharashtra" required>
+        </div>
+        <div class="form-group">
+          <label for="tripSourceCity">Source City</label>
+          <input type="text" id="tripSourceCity" class="form-control" placeholder="City name">
+        </div>
+        <div class="form-group">
+          <label for="tripDest">Destination Address/City *</label>
+          <input type="text" id="tripDest" class="form-control" placeholder="e.g. Pune, Maharashtra" required>
+        </div>
+        <div class="form-group">
+          <label for="tripDestCity">Destination City</label>
+          <input type="text" id="tripDestCity" class="form-control" placeholder="City name">
+        </div>
+        <div class="form-group">
+          <label for="tollFeeUp">Toll Fee — One Way Up (₹)</label>
+          <input type="number" id="tollFeeUp" class="form-control" placeholder="0.00" step="0.01" min="0" value="0" oninput="calcTotalToll()">
+        </div>
+        <div class="form-group">
+          <label for="tollFeeDown">Toll Fee — One Way Down (₹)</label>
+          <input type="number" id="tollFeeDown" class="form-control" placeholder="0.00" step="0.01" min="0" value="0" oninput="calcTotalToll()">
+        </div>
+        <div class="form-group">
+          <label>Total Toll (₹)</label>
+          <input type="text" id="totalTollDisplay" class="form-control" value="₹0.00" readonly style="background:rgba(0,212,255,0.05); color:var(--accent-gold); font-family:'Orbitron',sans-serif; font-weight:600;">
+        </div>
+        <div class="form-group">
+          <label for="tripLoadWeight">Load Weight</label>
+          <div style="display:flex; gap:8px;">
+            <input type="number" id="tripLoadWeight" class="form-control" placeholder="0.00" step="0.01">
+            <select id="tripLoadUnit" class="form-control" style="max-width:100px;">
+              <option value="tons">Tons</option>
+              <option value="kg">KG</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="tripStatus">Status</label>
+          <select id="tripStatus" class="form-control">
+            <option value="planned">Planned</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label for="tripNotes">Notes</label>
+          <textarea id="tripNotes" class="form-control" placeholder="Additional notes..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="btn btn-outline" onclick="closeTripModal()">Cancel</button>
+        <button type="submit" class="btn btn-gold" id="tripSubmitBtn">
+          <span id="tripSubmitText">Save Trip</span>
+          <span id="tripSubmitSpinner" style="display:none;">⏳ Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/trips.js"></script>
+</body>
+</html>

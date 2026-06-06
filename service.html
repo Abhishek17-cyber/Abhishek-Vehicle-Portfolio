@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Records — Abhishek's Vehicle Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <a href="dashboard.html" class="navbar-brand">
+        <span class="navbar-logo-icon">🚛</span>
+        <div>
+          <div class="navbar-logo-text">Abhishek's Vehicle Portfolio</div>
+          <span class="navbar-logo-sub">Fleet Management System</span>
+        </div>
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-live">
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <span class="last-updated" id="lastUpdated">Connecting...</span>
+      </div>
+      <div class="navbar-user">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span class="user-name" id="userName">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-title">Main</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="add-vehicle.html" class="nav-item"><span class="nav-icon">➕</span> Add Vehicle</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Records</div>
+    <a href="trips.html" class="nav-item"><span class="nav-icon">🛣️</span> Trips</a>
+    <a href="diesel.html" class="nav-item"><span class="nav-icon">⛽</span> Diesel Records</a>
+    <a href="service.html" class="nav-item active" id="serviceNavItem">
+      <span class="nav-icon">🔧</span> Service
+      <span class="nav-badge hidden" id="serviceAlertCount">0</span>
+    </a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Documents</div>
+    <a href="uploads.html" class="nav-item"><span class="nav-icon">📁</span> Upload Bills</a>
+    <div class="sidebar-divider"></div>
+    <a href="#" class="nav-item" onclick="logout(); return false;"><span class="nav-icon">⏻</span> Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="text-gold">🔧 Service Records</h1>
+      <button class="btn btn-primary btn-sm" onclick="openAddService()">+ Add Service</button>
+    </div>
+
+    <div id="serviceAlert"></div>
+
+    <!-- Service Alert Banner -->
+    <div class="service-alert-banner" id="serviceAlertBanner">
+      <div class="alert-banner-header">⚠️ Upcoming Service Alerts — Action Required</div>
+      <div class="alert-banner-items" id="serviceAlertItems"></div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="summary-card">
+        <div class="value" id="summaryTotalService">0</div>
+        <div class="label">Total Records</div>
+      </div>
+      <div class="summary-card">
+        <div class="value" id="summaryTotalCost">₹0</div>
+        <div class="label">Total Cost</div>
+      </div>
+      <div class="summary-card">
+        <div class="value" style="color:var(--accent-orange);" id="summaryAlertsCount">0</div>
+        <div class="label">⚠️ Active Alerts</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <select class="form-control" id="filterVehicle" onchange="loadServiceRecords()">
+        <option value="">All Vehicles</option>
+      </select>
+      <input type="date" class="form-control" id="filterDateFrom" onchange="loadServiceRecords()">
+      <input type="date" class="form-control" id="filterDateTo" onchange="loadServiceRecords()">
+      <button class="btn btn-outline btn-sm" onclick="clearServiceFilters()">✕ Clear</button>
+    </div>
+
+    <!-- Service Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Service Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Cost (₹)</th>
+            <th>Mechanic / Garage</th>
+            <th>Next Service</th>
+            <th>Days Left</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="serviceTableBody">
+          <tr><td colspan="9" style="text-align:center; padding:40px;"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit Service Modal -->
+<div class="modal-overlay" id="serviceModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="serviceModalTitle" style="font-family:'Orbitron',sans-serif; font-size:0.9rem; color:var(--accent-gold); letter-spacing:2px; text-transform:uppercase;">🔧 Add Service Record</h3>
+      <button class="modal-close" onclick="closeServiceModal()">×</button>
+    </div>
+    <form id="serviceForm" novalidate>
+      <input type="hidden" id="serviceRecordId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="serviceVehicle">Vehicle *</label>
+          <select id="serviceVehicle" class="form-control" required>
+            <option value="">Select vehicle</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="serviceDate">Service Date *</label>
+          <input type="date" id="serviceDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="serviceType">Service Type *</label>
+          <select id="serviceType" class="form-control" required>
+            <option value="">Select type</option>
+            <option value="Oil Change">Oil Change</option>
+            <option value="Tyre Replacement">Tyre Replacement</option>
+            <option value="Brake Service">Brake Service</option>
+            <option value="Engine Overhaul">Engine Overhaul</option>
+            <option value="AC Service">AC Service</option>
+            <option value="Electrical Repair">Electrical Repair</option>
+            <option value="Body Work">Body Work</option>
+            <option value="General Service">General Service</option>
+            <option value="Pollution Check">Pollution Check</option>
+            <option value="Insurance Renewal">Insurance Renewal</option>
+            <option value="Fitness Certificate">Fitness Certificate</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="serviceCost">Service Cost (₹)</label>
+          <input type="number" id="serviceCost" class="form-control" placeholder="e.g. 5000" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label for="mechanicName">Mechanic Name</label>
+          <input type="text" id="mechanicName" class="form-control" placeholder="Mechanic / Workshop name">
+        </div>
+        <div class="form-group">
+          <label for="garageName">Garage / Workshop</label>
+          <input type="text" id="garageName" class="form-control" placeholder="Garage name">
+        </div>
+        <div class="form-group full-width">
+          <label for="nextServiceDate">Next Service Date</label>
+          <input type="date" id="nextServiceDate" class="form-control">
+          <small style="color:rgba(160,174,192,0.5); font-size:0.75rem; margin-top:4px; display:block;">Setting this will update the vehicle's next service reminder.</small>
+        </div>
+        <div class="form-group full-width">
+          <label for="serviceDescription">Description / Work Done</label>
+          <textarea id="serviceDescription" class="form-control" placeholder="Describe the service performed..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="btn btn-outline" onclick="closeServiceModal()">Cancel</button>
+        <button type="submit" class="btn btn-gold" id="serviceSubmitBtn">
+          <span id="serviceSubmitText">💾 Save Record</span>
+          <span id="serviceSubmitSpinner" style="display:none;">⏳ Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/service.js"></script>
+</body>
+</html>

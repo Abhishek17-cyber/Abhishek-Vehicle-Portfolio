@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Bills — Abhishek's Vehicle Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <a href="dashboard.html" class="navbar-brand">
+        <span class="navbar-logo-icon">🚛</span>
+        <div>
+          <div class="navbar-logo-text">Abhishek's Vehicle Portfolio</div>
+          <span class="navbar-logo-sub">Fleet Management System</span>
+        </div>
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-live">
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <span class="last-updated" id="lastUpdated">Connecting...</span>
+      </div>
+      <div class="navbar-user">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span class="user-name" id="userName">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-title">Main</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="add-vehicle.html" class="nav-item"><span class="nav-icon">➕</span> Add Vehicle</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Records</div>
+    <a href="trips.html" class="nav-item"><span class="nav-icon">🛣️</span> Trips</a>
+    <a href="diesel.html" class="nav-item"><span class="nav-icon">⛽</span> Diesel Records</a>
+    <a href="service.html" class="nav-item" id="serviceNavItem">
+      <span class="nav-icon">🔧</span> Service
+      <span class="nav-badge hidden" id="serviceAlertCount">0</span>
+    </a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Documents</div>
+    <a href="uploads.html" class="nav-item active"><span class="nav-icon">📁</span> Upload Bills</a>
+    <div class="sidebar-divider"></div>
+    <a href="#" class="nav-item" onclick="logout(); return false;"><span class="nav-icon">⏻</span> Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="text-gold">📁 Upload Bills & Documents</h1>
+    </div>
+
+    <div id="uploadAlert"></div>
+
+    <!-- Upload Form -->
+    <div class="glass-card mb-3">
+      <h3 style="font-size:0.85rem; color:var(--accent-blue); letter-spacing:2px; text-transform:uppercase; margin-bottom:24px;">📤 Upload New Document</h3>
+
+      <form id="uploadForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="uploadVehicle">Select Vehicle</label>
+            <select id="uploadVehicle" class="form-control">
+              <option value="">Select vehicle (optional)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="uploadDocType">Document Type</label>
+            <select id="uploadDocType" class="form-control">
+              <option value="diesel_bill">⛽ Diesel Bill</option>
+              <option value="load_bill">📦 Load Bill</option>
+              <option value="weight_bill">⚖️ Weight Bill</option>
+              <option value="vehicle_photo">📸 Vehicle Photo</option>
+              <option value="other">📄 Other Document</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <!-- Drop Zone -->
+            <label>File</label>
+            <div class="file-drop-zone" id="uploadDropZone"
+              onclick="document.getElementById('uploadFileInput').click()"
+              ondragover="handleDragOver(event)"
+              ondragleave="handleDragLeave(event)"
+              ondrop="handleDrop(event)"
+            >
+              <span class="file-drop-icon" id="dropIcon">📁</span>
+              <p class="file-drop-text" id="dropText">Click or drag & drop to upload</p>
+              <p class="file-drop-hint">Supports: JPG, PNG, PDF, DOC, DOCX — Max 10MB</p>
+            </div>
+            <input type="file" id="uploadFileInput" accept="image/*,application/pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(this)">
+            <div id="selectedFileInfo" style="display:none; margin-top:12px; padding:12px 16px; background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); border-radius:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <strong id="selectedFileName" style="color:var(--accent-green);"></strong>
+                  <span id="selectedFileSize" style="color:rgba(160,174,192,0.6); font-size:0.8rem; margin-left:10px;"></span>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" onclick="clearFile()">✕ Remove</button>
+              </div>
+              <div id="imagePreviewContainer" style="display:none; margin-top:12px; text-align:center;">
+                <img id="imagePreview" src="" alt="Preview" style="max-height:200px; max-width:100%; border-radius:8px; border:1px solid rgba(0,212,255,0.2);">
+              </div>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label for="uploadNotes">Notes (optional)</label>
+            <textarea id="uploadNotes" class="form-control" placeholder="Description or notes about this document..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+          <button type="submit" class="btn btn-gold" id="uploadSubmitBtn">
+            <span id="uploadSubmitText">📤 Upload Document</span>
+            <span id="uploadSpinner" style="display:none;">⏳ Uploading...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Uploaded Documents -->
+    <div class="section-header">
+      <h2 class="section-title">Uploaded Documents</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <select class="form-control" id="docTypeFilter" onchange="filterDocuments()" style="max-width:180px;">
+          <option value="">All Types</option>
+          <option value="diesel_bill">⛽ Diesel Bills</option>
+          <option value="load_bill">📦 Load Bills</option>
+          <option value="weight_bill">⚖️ Weight Bills</option>
+          <option value="vehicle_photo">📸 Vehicle Photos</option>
+          <option value="other">📄 Other</option>
+        </select>
+        <select class="form-control" id="docVehicleFilter" onchange="filterDocuments()" style="max-width:200px;">
+          <option value="">All Vehicles</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="loadDocuments()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div id="docsLoading" style="text-align:center; padding:40px;">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="file-preview-grid" id="docsGrid" style="display:none;"></div>
+
+    <div id="docsEmpty" style="display:none; text-align:center; padding:60px 20px; color:var(--text-secondary);">
+      <div style="font-size:3rem; margin-bottom:16px;">📁</div>
+      <h3 style="color:white; margin-bottom:8px;">No Documents Yet</h3>
+      <p>Upload your diesel bills, load bills, and other documents above.</p>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/realtime.js"></script>
+<script>
+  // ===== Upload Page Logic =====
+  let allDocs = [];
+  let uploadVehicles = [];
+  let selectedFile = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    requireAuth();
+    loadNavUser();
+    initRealtimePolling();
+    loadUploadVehicles();
+    loadDocuments();
+  });
+
+  async function loadUploadVehicles() {
+    const token = getToken();
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/vehicles`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      uploadVehicles = data.vehicles || data;
+
+      ['uploadVehicle', 'docVehicleFilter'].forEach(sid => {
+        const sel = document.getElementById(sid);
+        if (!sel) return;
+        uploadVehicles.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = `${v.vehicle_number} — ${v.make} ${v.model}`;
+          sel.appendChild(opt);
+        });
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadDocuments() {
+    const token = getToken();
+    const grid = document.getElementById('docsGrid');
+    const loading = document.getElementById('docsLoading');
+    const empty = document.getElementById('docsEmpty');
+
+    loading.style.display = 'block';
+    grid.style.display = 'none';
+    empty.style.display = 'none';
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to load');
+      allDocs = await res.json();
+      renderDocuments(allDocs);
+    } catch(e) {
+      loading.style.display = 'none';
+      empty.style.display = 'block';
+      empty.querySelector('p').textContent = 'Error loading documents: ' + e.message;
+    }
+  }
+
+  function filterDocuments() {
+    const type = document.getElementById('docTypeFilter').value;
+    const vehicle = document.getElementById('docVehicleFilter').value;
+
+    let filtered = allDocs.filter(d => {
+      if (type && d.doc_type !== type) return false;
+      if (vehicle && d.vehicle_id != vehicle) return false;
+      return true;
+    });
+    renderDocuments(filtered);
+  }
+
+  function renderDocuments(docs) {
+    const grid = document.getElementById('docsGrid');
+    const loading = document.getElementById('docsLoading');
+    const empty = document.getElementById('docsEmpty');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    grid.style.display = 'grid';
+
+    const docTypeIcons = {
+      diesel_bill: '⛽',
+      load_bill: '📦',
+      weight_bill: '⚖️',
+      vehicle_photo: '📸',
+      other: '📄'
+    };
+    const docTypeLabels = {
+      diesel_bill: 'Diesel Bill',
+      load_bill: 'Load Bill',
+      weight_bill: 'Weight Bill',
+      vehicle_photo: 'Vehicle Photo',
+      other: 'Document'
+    };
+
+    grid.innerHTML = docs.map(doc => {
+      const vehicle = uploadVehicles.find(v => v.id === doc.vehicle_id);
+      const isImage = doc.file_name && /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.file_name);
+      const icon = docTypeIcons[doc.doc_type] || '📄';
+      const label = docTypeLabels[doc.doc_type] || 'Document';
+      const fileUrl = `${API_BASE_URL}/${doc.file_url}`;
+
+      return `
+        <div class="file-preview-item" style="border-radius:12px; overflow:hidden; position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(0,212,255,0.15); transition:all 0.3s ease;" onmouseenter="this.style.borderColor='rgba(0,212,255,0.4)'" onmouseleave="this.style.borderColor='rgba(0,212,255,0.15)'">
+          ${isImage
+            ? `<div style="height:140px; overflow:hidden; cursor:pointer;" onclick="window.open('${fileUrl}', '_blank')">
+                 <img src="${fileUrl}" alt="${doc.file_name}" style="width:100%; height:100%; object-fit:cover;">
+               </div>`
+            : `<div style="height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:rgba(0,212,255,0.05);" onclick="window.open('${fileUrl}', '_blank')">
+                 <div style="font-size:2.5rem; margin-bottom:8px;">${icon}</div>
+                 <div style="font-size:0.7rem; color:rgba(0,212,255,0.7); letter-spacing:1px; text-transform:uppercase;">${label}</div>
+               </div>`
+          }
+          <div style="padding:10px 12px;">
+            <div style="font-size:0.8rem; color:white; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">${doc.file_name}</div>
+            <div style="font-size:0.7rem; color:rgba(160,174,192,0.5); margin-bottom:4px;">${vehicle ? vehicle.vehicle_number : 'No vehicle'} • ${formatDate(doc.created_at)}</div>
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              <a href="${fileUrl}" target="_blank" class="btn btn-outline btn-sm" style="flex:1; justify-content:center;">👁️ View</a>
+              <button class="btn btn-danger btn-sm" onclick="deleteDoc(${doc.id})" title="Delete">🗑️</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ===== File Upload Form =====
+  function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+      selectedFile = input.files[0];
+      showFileInfo(selectedFile);
+    }
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    const zone = document.getElementById('uploadDropZone');
+    zone.classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    document.getElementById('uploadDropZone').classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadDropZone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      selectedFile = file;
+      showFileInfo(file);
+    }
+  }
+
+  function showFileInfo(file) {
+    document.getElementById('uploadDropZone').style.display = 'none';
+    const info = document.getElementById('selectedFileInfo');
+    info.style.display = 'block';
+    document.getElementById('selectedFileName').textContent = file.name;
+    document.getElementById('selectedFileSize').textContent = formatBytes(file.size);
+
+    // Preview image
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('imagePreview').src = e.target.result;
+        previewContainer.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      previewContainer.style.display = 'none';
+    }
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    document.getElementById('uploadFileInput').value = '';
+    document.getElementById('uploadDropZone').style.display = 'block';
+    document.getElementById('selectedFileInfo').style.display = 'none';
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!selectedFile) {
+      showAlert('uploadAlert', '⚠️ Please select a file to upload', 'warning');
+      return;
+    }
+
+    const submitText = document.getElementById('uploadSubmitText');
+    const spinner = document.getElementById('uploadSpinner');
+    const btn = document.getElementById('uploadSubmitBtn');
+
+    submitText.style.display = 'none';
+    spinner.style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+      const token = getToken();
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('doc_type', document.getElementById('uploadDocType').value);
+      const vehicleId = document.getElementById('uploadVehicle').value;
+      if (vehicleId) formData.append('vehicle_id', vehicleId);
+      const notes = document.getElementById('uploadNotes').value.trim();
+      if (notes) formData.append('notes', notes);
+
+      const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showAlert('uploadAlert', `✅ "${data.file_name}" uploaded successfully!`, 'success');
+        clearFile();
+        document.getElementById('uploadNotes').value = '';
+        document.getElementById('uploadVehicle').value = '';
+        await loadDocuments();
+      } else {
+        showAlert('uploadAlert', `❌ Upload failed: ${data.message}`, 'danger');
+      }
+    } catch(err) {
+      showAlert('uploadAlert', `❌ Error: ${err.message}`, 'danger');
+    } finally {
+      submitText.style.display = 'inline';
+      spinner.style.display = 'none';
+      btn.disabled = false;
+    }
+  });
+
+  async function deleteDoc(id) {
+    if (!confirm('Delete this document? This cannot be undone.')) return;
+    const token = getToken();
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/uploads/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        showAlert('uploadAlert', '✅ Document deleted', 'success');
+        await loadDocuments();
+      }
+    } catch(e) {
+      showAlert('uploadAlert', '❌ Failed to delete', 'danger');
+    }
+  }
+</script>
+</body>
+</html>

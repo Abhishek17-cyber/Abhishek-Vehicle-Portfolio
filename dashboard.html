@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Abhishek's Vehicle Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+        <a href="dashboard.html" class="navbar-brand">
+          <span class="navbar-logo-icon">🚛</span>
+          <div>
+            <div class="navbar-logo-text">Abhishek's Vehicle Portfolio</div>
+            <span class="navbar-logo-sub">Fleet Management System</span>
+          </div>
+        </a>
+      </div>
+      <div class="navbar-right">
+        <div class="navbar-live">
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            LIVE
+          </div>
+          <span class="last-updated" id="lastUpdated">Connecting...</span>
+        </div>
+        <div class="navbar-user" id="userInfo">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span class="user-name" id="userName">Admin</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+      </div>
+    </nav>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section-title">Main</div>
+      <a href="dashboard.html" class="nav-item active">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a href="add-vehicle.html" class="nav-item">
+        <span class="nav-icon">➕</span> Add Vehicle
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">Records</div>
+
+      <a href="trips.html" class="nav-item">
+        <span class="nav-icon">🛣️</span> Trips
+      </a>
+      <a href="diesel.html" class="nav-item">
+        <span class="nav-icon">⛽</span> Diesel Records
+      </a>
+      <a href="service.html" class="nav-item" id="serviceNavItem">
+        <span class="nav-icon">🔧</span> Service
+        <span class="nav-badge hidden" id="serviceAlertCount">0</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">Documents</div>
+
+      <a href="uploads.html" class="nav-item">
+        <span class="nav-icon">📁</span> Upload Bills
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">Account</div>
+      <a href="#" class="nav-item" onclick="logout(); return false;">
+        <span class="nav-icon">⏻</span> Logout
+      </a>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+
+      <!-- Service Alert Banner -->
+      <div class="service-alert-banner" id="serviceAlertBanner">
+        <div class="alert-banner-header">
+          ⚠️ Service Alerts — Action Required
+        </div>
+        <div class="alert-banner-items" id="alertBannerItems"></div>
+      </div>
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="text-gold">Dashboard</h1>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <a href="add-vehicle.html" class="btn btn-gold btn-sm">+ Add Vehicle</a>
+          <button class="btn btn-outline btn-sm" onclick="refreshDashboard()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <span class="stat-icon">🚛</span>
+          <div class="stat-value" id="statVehicles">—</div>
+          <div class="stat-label">Total Vehicles</div>
+          <span class="stat-bg-icon">🚛</span>
+        </div>
+        <div class="stat-card gold">
+          <span class="stat-icon">🛣️</span>
+          <div class="stat-value" id="statTrips">—</div>
+          <div class="stat-label">Total Trips</div>
+          <span class="stat-bg-icon">🛣️</span>
+        </div>
+        <div class="stat-card orange">
+          <span class="stat-icon">⛽</span>
+          <div class="stat-value" id="statDiesel">—</div>
+          <div class="stat-label">Diesel Cost (₹)</div>
+          <span class="stat-bg-icon">⛽</span>
+        </div>
+        <div class="stat-card green">
+          <span class="stat-icon">🔧</span>
+          <div class="stat-value" id="statService">—</div>
+          <div class="stat-label">Upcoming Service</div>
+          <span class="stat-bg-icon">🔧</span>
+        </div>
+      </div>
+
+      <!-- Vehicles Section -->
+      <div class="section-header">
+        <h2 class="section-title">My Vehicles</h2>
+        <a href="add-vehicle.html" class="btn btn-primary btn-sm">+ Add New</a>
+      </div>
+
+      <!-- Vehicle grid -->
+      <div class="vehicles-grid" id="vehiclesGrid">
+        <div class="empty-state" id="vehiclesEmpty" style="grid-column:1/-1; display:none;">
+          <span class="empty-icon">🚛</span>
+          <h3>No Vehicles Yet</h3>
+          <p style="margin-bottom:20px;">Add your first vehicle to get started</p>
+          <a href="add-vehicle.html" class="btn btn-gold">+ Add Vehicle</a>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="vehiclesLoading" style="text-align:center; padding:40px;">
+        <div class="spinner"></div>
+        <p class="text-muted" style="margin-top:8px; font-size:0.85rem;">Loading vehicles...</p>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

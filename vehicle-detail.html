@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Detail — Abhishek's Vehicle Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <a href="dashboard.html" class="navbar-brand">
+        <span class="navbar-logo-icon">🚛</span>
+        <div>
+          <div class="navbar-logo-text">Abhishek's Vehicle Portfolio</div>
+          <span class="navbar-logo-sub">Fleet Management System</span>
+        </div>
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-live">
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <span class="last-updated" id="lastUpdated">Connecting...</span>
+      </div>
+      <div class="navbar-user">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span class="user-name" id="userName">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-title">Main</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="add-vehicle.html" class="nav-item"><span class="nav-icon">➕</span> Add Vehicle</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Records</div>
+    <a href="trips.html" class="nav-item"><span class="nav-icon">🛣️</span> Trips</a>
+    <a href="diesel.html" class="nav-item"><span class="nav-icon">⛽</span> Diesel Records</a>
+    <a href="service.html" class="nav-item" id="serviceNavItem">
+      <span class="nav-icon">🔧</span> Service
+      <span class="nav-badge hidden" id="serviceAlertCount">0</span>
+    </a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">Documents</div>
+    <a href="uploads.html" class="nav-item"><span class="nav-icon">📁</span> Upload Bills</a>
+    <div class="sidebar-divider"></div>
+    <a href="#" class="nav-item" onclick="logout(); return false;"><span class="nav-icon">⏻</span> Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- Loading -->
+    <div id="loadingState" style="text-align:center; padding:80px;">
+      <div class="spinner"></div>
+      <p class="text-muted" style="margin-top:12px;">Loading vehicle details...</p>
+    </div>
+
+    <!-- Vehicle Detail Content -->
+    <div id="vehicleDetailContent" class="hidden">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <a href="dashboard.html" class="btn btn-outline btn-sm">← Back</a>
+          <h1 class="text-gold" id="detailTitle">Vehicle Detail</h1>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="toggleEdit()">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVehicle()">🗑️ Delete</button>
+        </div>
+      </div>
+
+      <!-- Vehicle Header Card -->
+      <div class="detail-header glass-card mb-3">
+        <!-- Left: Image -->
+        <div class="detail-image" id="detailImageContainer">🚛</div>
+
+        <!-- Right: Info -->
+        <div class="detail-info">
+          <div>
+            <div class="detail-number" id="detailNumber">—</div>
+            <div class="detail-model" id="detailModel">—</div>
+            <div style="margin-top:10px;" id="detailStatusBadge"></div>
+          </div>
+
+          <!-- Service Countdown -->
+          <div class="service-reminder" id="serviceReminder" style="display:none;">
+            <div class="countdown-display" id="countdownDays">—</div>
+            <div class="countdown-label">Days Until Service</div>
+            <div style="text-align:center; font-size:0.8rem; color:rgba(255,107,53,0.7); margin-top:6px;" id="serviceDate"></div>
+          </div>
+
+          <!-- Quick Info Grid -->
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-item-label">👤 Owner</div>
+              <div class="info-item-value" id="quickOwner">—</div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">📞 Owner Phone</div>
+              <div class="info-item-value" id="quickOwnerPhone">—</div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">🧑‍✈️ Driver</div>
+              <div class="info-item-value" id="quickDriver">—</div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">📞 Driver Phone</div>
+              <div class="info-item-value" id="quickDriverPhone">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('info')">📋 Info</button>
+        <button class="tab-btn" onclick="switchTab('trips')">🛣️ Trips</button>
+        <button class="tab-btn" onclick="switchTab('diesel')">⛽ Diesel</button>
+        <button class="tab-btn" onclick="switchTab('service')">🔧 Service</button>
+        <button class="tab-btn" onclick="switchTab('docs')">📁 Documents</button>
+      </div>
+
+      <!-- TAB: Info -->
+      <div class="tab-panel active" id="tab-info">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+
+          <!-- Vehicle Details -->
+          <div class="glass-card">
+            <h3 style="font-size:0.8rem; color:var(--accent-blue); letter-spacing:2px; text-transform:uppercase; margin-bottom:18px;">🚛 Vehicle Details</h3>
+            <div id="vehicleDetailFields"></div>
+          </div>
+
+          <!-- Owner Details -->
+          <div class="glass-card">
+            <h3 style="font-size:0.8rem; color:var(--accent-gold); letter-spacing:2px; text-transform:uppercase; margin-bottom:18px;">👤 Owner Details</h3>
+            <div id="ownerDetailFields"></div>
+          </div>
+
+          <!-- Driver Details -->
+          <div class="glass-card">
+            <h3 style="font-size:0.8rem; color:var(--accent-green); letter-spacing:2px; text-transform:uppercase; margin-bottom:18px;">🧑‍✈️ Driver Details</h3>
+            <div id="driverDetailFields"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB: Trips -->
+      <div class="tab-panel" id="tab-trips">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Load</th>
+                <th>Toll Up</th>
+                <th>Toll Down</th>
+                <th>Total Toll</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="vehicleTripsBody">
+              <tr><td colspan="8" style="text-align:center; padding:40px;"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: Diesel -->
+      <div class="tab-panel" id="tab-diesel">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Liters</th>
+                <th>Cost</th>
+                <th>Pump Station</th>
+                <th>Trip Route</th>
+                <th>Bill</th>
+              </tr>
+            </thead>
+            <tbody id="vehicleDieselBody">
+              <tr><td colspan="6" style="text-align:center; padding:40px;"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: Service -->
+      <div class="tab-panel" id="tab-service">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Cost</th>
+                <th>Mechanic / Garage</th>
+                <th>Next Service</th>
+              </tr>
+            </thead>
+            <tbody id="vehicleServiceBody">
+              <tr><td colspan="6" style="text-align:center; padding:40px;"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: Documents -->
+      <div class="tab-panel" id="tab-docs">
+        <div style="margin-bottom:16px;">
+          <a href="uploads.html" class="btn btn-primary btn-sm">📁 Upload New Document</a>
+        </div>
+        <div class="file-preview-grid" id="vehicleDocsGrid">
+          <div style="text-align:center; color:var(--text-secondary); padding:40px; grid-column:1/-1;">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /vehicleDetailContent -->
+  </main>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 style="font-family:'Orbitron',sans-serif; font-size:0.9rem; color:var(--accent-gold); letter-spacing:2px; text-transform:uppercase;">✏️ Edit Vehicle</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="editModalContent"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/vehicle.js"></script>
+</body>
+</html>
