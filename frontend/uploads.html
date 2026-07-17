@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Bills — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link active"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Upload Documents</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="mb-0 fw-bold d-md-none">Documents</h4>
+        </div>
+
+        <div id="uploadAlert"></div>
+
+        <!-- Upload Form Card -->
+        <div class="card glass-panel fade-in-up mb-5">
+          <div class="card-header bg-transparent py-3 border-bottom-0">
+            <h6 class="m-0 font-weight-bold text-primary text-uppercase"><i class="bi bi-cloud-arrow-up me-2"></i>Upload New Document</h6>
+          </div>
+          <div class="card-body px-4 pb-4">
+            <form id="uploadForm" novalidate>
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <label for="uploadVehicle" class="form-label text-secondary small fw-bold">Select Vehicle</label>
+                  <select id="uploadVehicle" class="form-select">
+                    <option value="">Select vehicle (optional)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="uploadDocType" class="form-label text-secondary small fw-bold">Document Type</label>
+                  <select id="uploadDocType" class="form-select">
+                    <option value="diesel_bill">⛽ Diesel Bill</option>
+                    <option value="load_bill">📦 Load Bill</option>
+                    <option value="weight_bill">⚖️ Weight Bill</option>
+                    <option value="vehicle_photo">📸 Vehicle Photo</option>
+                    <option value="other">📄 Other Document</option>
+                  </select>
+                </div>
+                
+                <div class="col-12">
+                  <label class="form-label text-secondary small fw-bold">File</label>
+                  <div class="border border-dashed rounded p-5 text-center bg-light cursor-pointer drag-zone" id="uploadDropZone"
+                    onclick="document.getElementById('uploadFileInput').click()"
+                    ondragover="handleDragOver(event)"
+                    ondragleave="handleDragLeave(event)"
+                    ondrop="handleDrop(event)"
+                    style="border-style: dashed !important; transition: background 0.2s; cursor: pointer;">
+                    
+                    <i class="bi bi-folder-plus display-4 text-primary mb-3" id="dropIcon"></i>
+                    <h5 class="mb-1" id="dropText">Click or drag & drop to upload</h5>
+                    <p class="text-muted small mb-0">Supports: JPG, PNG, PDF, DOC, DOCX — Max 10MB</p>
+                  </div>
+                  
+                  <input type="file" id="uploadFileInput" accept="image/*,application/pdf,.doc,.docx" class="d-none" onchange="handleFileSelect(this)">
+                  
+                  <div id="selectedFileInfo" class="d-none mt-3 p-3 bg-light border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <div>
+                        <i class="bi bi-file-earmark-check text-success me-2 fs-5 align-middle"></i>
+                        <strong id="selectedFileName" class="text-dark align-middle"></strong>
+                        <span id="selectedFileSize" class="text-muted small ms-2 align-middle"></span>
+                      </div>
+                      <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearFile()"><i class="bi bi-x me-1"></i>Remove</button>
+                    </div>
+                    <div id="imagePreviewContainer" class="d-none mt-2 text-center">
+                      <img id="imagePreview" src="" alt="Preview" class="img-thumbnail" style="max-height:200px;">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label for="uploadNotes" class="form-label text-secondary small fw-bold">Notes (optional)</label>
+                  <textarea id="uploadNotes" class="form-control" rows="2" placeholder="Description or notes about this document..."></textarea>
+                </div>
+              </div>
+              <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
+                  <span id="uploadSubmitText"><i class="bi bi-cloud-arrow-up me-1"></i>Upload Document</span>
+                  <span id="uploadSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Uploading...</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Document Gallery -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h5 class="mb-0 fw-bold">Uploaded Documents</h5>
+          <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" id="docTypeFilter" onchange="filterDocuments()" style="width: auto;">
+              <option value="">All Types</option>
+              <option value="diesel_bill">⛽ Diesel Bills</option>
+              <option value="load_bill">📦 Load Bills</option>
+              <option value="weight_bill">⚖️ Weight Bills</option>
+              <option value="vehicle_photo">📸 Photos</option>
+              <option value="other">📄 Other</option>
+            </select>
+            <select class="form-select form-select-sm" id="docVehicleFilter" onchange="filterDocuments()" style="width: auto;">
+              <option value="">All Vehicles</option>
+            </select>
+            <button class="btn btn-outline-secondary btn-sm" onclick="loadDocuments()"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+        </div>
+
+        <div id="docsLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-2">Loading documents...</p>
+        </div>
+
+        <div class="row g-4" id="docsGrid" style="display:none;"></div>
+
+        <div id="docsEmpty" class="text-center py-5 bg-white rounded shadow-sm d-none">
+          <i class="bi bi-folder-x display-1 text-muted mb-3 opacity-25"></i>
+          <h4>No Documents Yet</h4>
+          <p class="text-muted">Upload your diesel bills, load bills, and other documents above.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script>
+    // ===== Upload Page Logic =====
+    let allDocs = [];
+    let uploadVehicles = [];
+    let selectedFile = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      requireAuth();
+      loadNavUser();
+      initRealtimePolling();
+      await loadUploadVehicles();
+      await loadDocuments();
+    });
+
+    async function loadUploadVehicles() {
+      const token = getToken();
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/vehicles`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        uploadVehicles = data.vehicles || data;
+
+        const user = getCurrentUser();
+        const isDriver = user && user.role === 'driver';
+
+        ['uploadVehicle', 'docVehicleFilter'].forEach(sid => {
+          const sel = document.getElementById(sid);
+          if (!sel) return;
+          
+          sel.innerHTML = '';
+          if (!isDriver) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = sid === 'docVehicleFilter' ? 'All Vehicles' : 'Select vehicle (optional)';
+            sel.appendChild(opt);
+          }
+
+          uploadVehicles.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `${v.vehicle_number} — ${v.make} ${v.model}`;
+            sel.appendChild(opt);
+          });
+
+          if (isDriver && uploadVehicles.length > 0) {
+            sel.value = uploadVehicles[0].id;
+          }
+        });
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadDocuments() {
+      const token = getToken();
+      const grid = document.getElementById('docsGrid');
+      const loading = document.getElementById('docsLoading');
+      const empty = document.getElementById('docsEmpty');
+
+      loading.classList.remove('d-none');
+      grid.style.display = 'none';
+      empty.classList.add('d-none');
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to load');
+        allDocs = await res.json();
+
+        const user = getCurrentUser();
+        if (user && user.role === 'driver') {
+          filterDocuments();
+        } else {
+          renderDocuments(allDocs);
+        }
+      } catch(e) {
+        loading.classList.add('d-none');
+        empty.classList.remove('d-none');
+        empty.querySelector('p').textContent = 'Error loading documents: ' + e.message;
+      }
+    }
+
+    function filterDocuments() {
+      const type = document.getElementById('docTypeFilter').value;
+      const vehicle = document.getElementById('docVehicleFilter').value;
+
+      let filtered = allDocs.filter(d => {
+        if (type && d.doc_type !== type) return false;
+        if (vehicle && d.vehicle_id != vehicle) return false;
+        return true;
+      });
+      renderDocuments(filtered);
+    }
+
+    function renderDocuments(docs) {
+      const grid = document.getElementById('docsGrid');
+      const loading = document.getElementById('docsLoading');
+      const empty = document.getElementById('docsEmpty');
+
+      loading.classList.add('d-none');
+
+      if (!docs.length) {
+        grid.style.display = 'none';
+        empty.classList.remove('d-none');
+        return;
+      }
+
+      empty.classList.add('d-none');
+      grid.style.display = 'flex'; // Reset from none, use row d-flex logic
+      grid.className = 'row g-4'; // ensure classes are right
+
+      const docTypeIcons = {
+        diesel_bill: 'bi-fuel-pump text-warning',
+        load_bill: 'bi-box-seam text-info',
+        weight_bill: 'bi-rulers text-success',
+        vehicle_photo: 'bi-camera text-primary',
+        other: 'bi-file-earmark-text text-secondary'
+      };
+      const docTypeLabels = {
+        diesel_bill: 'Diesel Bill',
+        load_bill: 'Load Bill',
+        weight_bill: 'Weight Bill',
+        vehicle_photo: 'Vehicle Photo',
+        other: 'Document'
+      };
+
+      grid.innerHTML = docs.map(doc => {
+        const vehicle = uploadVehicles.find(v => v.id === doc.vehicle_id);
+        const isImage = doc.file_name && /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.file_name);
+        const icon = docTypeIcons[doc.doc_type] || 'bi-file-earmark-text text-secondary';
+        const label = docTypeLabels[doc.doc_type] || 'Document';
+        const fileUrl = `${API_BASE_URL}/${doc.file_url}`;
+
+        return `
+          <div class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+              ${isImage
+                ? `<div class="cursor-pointer bg-light" style="height: 160px; overflow: hidden;" onclick="window.open('${fileUrl}', '_blank')">
+                     <img src="${fileUrl}" alt="${doc.file_name}" class="w-100 h-100 object-fit-cover">
+                   </div>`
+                : `<div class="cursor-pointer bg-light d-flex flex-column align-items-center justify-content-center" style="height: 160px;" onclick="window.open('${fileUrl}', '_blank')">
+                     <i class="bi ${icon} display-4 mb-2"></i>
+                     <span class="small text-muted text-uppercase fw-semibold tracking-wide">${label}</span>
+                   </div>`
+              }
+              <div class="card-body p-3">
+                <h6 class="card-title text-truncate mb-1 fw-bold text-dark" title="${doc.file_name}">${doc.file_name}</h6>
+                <p class="card-text small text-muted mb-2 text-truncate">${vehicle ? vehicle.vehicle_number : 'General Document'} &bull; ${formatDate(doc.created_at)}</p>
+                
+                <div class="d-flex gap-2 mt-auto pt-2 border-top">
+                  <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm flex-grow-1"><i class="bi bi-eye me-1"></i>View</a>
+                  <button class="btn btn-outline-danger btn-sm" onclick="deleteDoc(${doc.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== File Upload Form =====
+    function handleFileSelect(input) {
+      if (input.files && input.files[0]) {
+        selectedFile = input.files[0];
+        showFileInfo(selectedFile);
+      }
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      const zone = document.getElementById('uploadDropZone');
+      zone.classList.add('bg-white');
+      zone.classList.add('border-primary');
+    }
+
+    function handleDragLeave(e) {
+      const zone = document.getElementById('uploadDropZone');
+      zone.classList.remove('bg-white');
+      zone.classList.remove('border-primary');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      handleDragLeave(e);
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        selectedFile = file;
+        showFileInfo(file);
+      }
+    }
+
+    function showFileInfo(file) {
+      document.getElementById('uploadDropZone').classList.add('d-none');
+      const info = document.getElementById('selectedFileInfo');
+      info.classList.remove('d-none');
+      document.getElementById('selectedFileName').textContent = file.name;
+      document.getElementById('selectedFileSize').textContent = formatBytes(file.size);
+
+      // Preview image
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('imagePreview').src = e.target.result;
+          previewContainer.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.classList.add('d-none');
+      }
+    }
+
+    function clearFile() {
+      selectedFile = null;
+      document.getElementById('uploadFileInput').value = '';
+      document.getElementById('uploadDropZone').classList.remove('d-none');
+      document.getElementById('selectedFileInfo').classList.add('d-none');
+      document.getElementById('imagePreviewContainer').classList.add('d-none');
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!selectedFile) {
+        showAlert('uploadAlert', '⚠️ Please select a file to upload', 'warning');
+        return;
+      }
+
+      const submitText = document.getElementById('uploadSubmitText');
+      const spinner = document.getElementById('uploadSpinner');
+      const btn = document.getElementById('uploadSubmitBtn');
+
+      submitText.classList.add('d-none');
+      spinner.classList.remove('d-none');
+      btn.disabled = true;
+
+      try {
+        const token = getToken();
+        const formData = new FormData();
+        formData.append('doc_type', document.getElementById('uploadDocType').value);
+        formData.append('file', selectedFile);
+        const vehicleId = document.getElementById('uploadVehicle').value;
+        if (vehicleId) formData.append('vehicle_id', vehicleId);
+        const notes = document.getElementById('uploadNotes').value.trim();
+        if (notes) formData.append('notes', notes);
+
+        const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert('uploadAlert', `✅ "${data.file_name}" uploaded successfully!`, 'success');
+          clearFile();
+          document.getElementById('uploadNotes').value = '';
+          const user = getCurrentUser();
+          if (user && user.role === 'driver' && uploadVehicles.length > 0) {
+            document.getElementById('uploadVehicle').value = uploadVehicles[0].id;
+          } else {
+            document.getElementById('uploadVehicle').value = '';
+          }
+          await loadDocuments();
+        } else {
+          showAlert('uploadAlert', `❌ Upload failed: ${data.message}`, 'danger');
+        }
+      } catch(err) {
+        showAlert('uploadAlert', `❌ Error: ${err.message}`, 'danger');
+      } finally {
+        submitText.classList.remove('d-none');
+        spinner.classList.add('d-none');
+        btn.disabled = false;
+      }
+    });
+
+    async function deleteDoc(id) {
+      if (!confirm('Delete this document? This cannot be undone.')) return;
+      const token = getToken();
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/uploads/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          showAlert('uploadAlert', '✅ Document deleted', 'success');
+          await loadDocuments();
+        }
+      } catch(e) {
+        showAlert('uploadAlert', '❌ Failed to delete', 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

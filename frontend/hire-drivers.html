@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hire Drivers — Fleet Management</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .driver-card-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid #f8f9fa; }
+    .driver-card { transition: transform 0.2s; cursor: pointer; }
+    .driver-card:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important; }
+  </style>
+</head>
+<body>
+  
+  <div class="d-flex" id="wrapper">
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Management</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-people me-2"></i>My Drivers</a>
+        <a href="hire-drivers.html" class="nav-link active"><i class="bi bi-person-plus me-2"></i>Hire Drivers</a>
+
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link"><i class="bi bi-wrench me-2"></i>Service</a>
+        <a href="finance.html" class="nav-link"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column" style="min-height: 100vh;">
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+          <h4 class="mb-0 fw-bold text-dark d-none d-md-block">Hire Drivers</h4>
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-light border rounded-circle p-2" onclick="toggleTheme()" title="Toggle Theme">
+              <i class="bi bi-sun-fill text-secondary" id="themeIcon"></i>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div class="container-fluid px-4 py-4 flex-grow-1">
+        
+        <!-- Search Filters -->
+        <div class="card glass-panel fade-in-up mb-4">
+          <div class="card-body">
+            <form id="searchForm" class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label text-muted fw-semibold">Location</label>
+                <input type="text" class="form-control" id="filterLoc" placeholder="e.g. Mumbai">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-muted fw-semibold">Vehicle Type</label>
+                <input type="text" class="form-control" id="filterType" placeholder="e.g. Truck">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-muted fw-semibold">Min Experience (Yrs)</label>
+                <input type="number" class="form-control" id="filterExp" min="0">
+              </div>
+              <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-search me-2"></i>Find Drivers</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Results Grid -->
+        <div class="row g-4" id="driverGrid">
+          <div class="col-12 text-center py-5 text-muted" id="loadingDiv">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <h5>Searching for available drivers...</h5>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Request Modal -->
+  <div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">Send Job Request</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="requestForm">
+            <input type="hidden" id="reqDriverId">
+            <div class="mb-3">
+              <label class="form-label">Message / Job Description</label>
+              <textarea class="form-control" id="reqMessage" rows="4" placeholder="Describe the job, location, and salary..." required></textarea>
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary" id="reqSubmitBtn">
+                Send Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/config.js"></script>
+  <script>
+    const requestModal = new bootstrap.Modal(document.getElementById('requestModal'));
+
+    function getToken() {
+      const token = localStorage.getItem('token');
+      if (!token) window.location.href = 'index.html';
+      return token;
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('show');
+      document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+    
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('show');
+      document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      const nxt = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', nxt);
+      localStorage.setItem('theme', nxt);
+      document.getElementById('themeIcon').className = nxt === 'dark' ? 'bi bi-moon-stars-fill text-warning' : 'bi bi-sun-fill text-secondary';
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadDrivers();
+    });
+
+    async function loadDrivers() {
+      const grid = document.getElementById('driverGrid');
+      grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>';
+      
+      const loc = document.getElementById('filterLoc').value;
+      const type = document.getElementById('filterType').value;
+      const exp = document.getElementById('filterExp').value;
+      
+      const params = new URLSearchParams();
+      if (loc) params.append('location', loc);
+      if (type) params.append('vehicle_type', type);
+      if (exp) params.append('experience', exp);
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/drivers?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        
+        if (!data.drivers || data.drivers.length === 0) {
+          grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-search fs-1 mb-3 d-block"></i>No available drivers found matching criteria.</div>';
+          return;
+        }
+
+        grid.innerHTML = data.drivers.map(d => {
+          const rating = d.average_rating ? parseFloat(d.average_rating).toFixed(1) : 'New';
+          const avatarUrl = d.profile_picture_url ? `${API_BASE_URL}/${d.profile_picture_url}` : 'images/truck.jpg';
+          const licenseBtn = d.id_proof_url 
+            ? `<a href="${API_BASE_URL}/${d.id_proof_url}" target="_blank" class="btn btn-sm btn-outline-secondary w-100 mb-2"><i class="bi bi-card-heading me-1"></i>View License</a>` 
+            : '';
+
+          return `
+            <div class="col-md-6 col-lg-4">
+              <div class="card driver-card glass-panel fade-in-up h-100">
+                <div class="card-body p-4 text-center">
+                  <div class="position-relative d-inline-block mb-3">
+                    <img src="${avatarUrl}" class="driver-card-img" alt="Driver">
+                    ${d.is_verified ? '<span class="position-absolute bottom-0 end-0 translate-middle p-1 bg-primary border border-light rounded-circle" title="Verified"><i class="bi bi-check text-white" style="font-size:10px;"></i></span>' : ''}
+                  </div>
+                  <h5 class="fw-bold mb-1">${d.full_name}</h5>
+                  <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill me-1"></i>${d.preferred_location || 'Anywhere'}</p>
+                  
+                  <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
+                    <span class="badge bg-light text-dark border"><i class="bi bi-truck me-1"></i>${d.vehicle_types || 'Any'}</span>
+                    <span class="badge bg-light text-dark border">${d.years_of_experience} Yrs Exp</span>
+                  </div>
+                  
+                  <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-3">
+                    <div class="text-start">
+                      <div class="small text-muted">Expected</div>
+                      <div class="fw-bold">₹${d.expected_salary || '-'}</div>
+                    </div>
+                    <div class="text-end">
+                      <div class="small text-muted">Rating</div>
+                      <div class="fw-bold text-warning"><i class="bi bi-star-fill me-1"></i>${rating}</div>
+                    </div>
+                  </div>
+                  
+                  ${(d.prev_company_name || d.prev_owner_name) ? `
+                    <div class="text-start bg-light p-3 rounded mb-3 border">
+                      <h6 class="fw-bold mb-2 pb-1 border-bottom fs-6 text-dark">Previous Experience</h6>
+                      <div class="small mb-1"><span class="text-muted">Company/Owner:</span> ${d.prev_company_name || d.prev_owner_name || 'N/A'}</div>
+                      <div class="small mb-1"><span class="text-muted">Period:</span> ${d.prev_employment_period || 'N/A'}</div>
+                      ${d.reason_for_leaving ? `<div class="small mb-1"><span class="text-muted">Reason:</span> ${d.reason_for_leaving}</div>` : ''}
+                      ${(d.reference_consent && d.reference_contact_number) ? `<div class="small"><span class="text-muted">Ref Contact:</span> <a href="tel:${d.reference_contact_number}">${d.reference_contact_number}</a></div>` : ''}
+                    </div>
+                  ` : ''}
+
+                  ${licenseBtn}
+                  <button class="btn btn-primary w-100" onclick="openRequestModal(${d.user_id}, '${d.full_name}')">
+                    <i class="bi bi-envelope me-2"></i>Send Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div class="col-12 text-center text-danger py-5">Error loading drivers.</div>';
+      }
+    }
+
+    function openRequestModal(driverId, driverName) {
+      document.getElementById('reqDriverId').value = driverId;
+      document.getElementById('reqMessage').value = '';
+      requestModal.show();
+    }
+
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('reqSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+      const driver_id = document.getElementById('reqDriverId').value;
+      const message = document.getElementById('reqMessage').value;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/jobs/request`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ driver_id, message })
+        });
+        
+        if (res.ok) {
+          alert('Job request sent successfully!');
+          requestModal.hide();
+        } else {
+          const data = await res.json();
+          alert(data.message || 'Failed to send request');
+        }
+      } catch (err) {
+        alert('Server error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Request';
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const t = localStorage.getItem('theme') || 'light';
+      document.getElementById('themeIcon').className = t === 'dark' ? 'bi bi-moon-stars-fill text-warning' : 'bi bi-sun-fill text-secondary';
+      loadDrivers();
+    });
+  </script>
+</body>
+</html>

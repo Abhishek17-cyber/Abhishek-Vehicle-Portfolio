@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Records — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link active d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Service Records</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="mb-0 fw-bold d-md-none">Service Records</h4>
+          <button class="btn btn-primary" onclick="openAddService()"><i class="bi bi-plus-lg me-1"></i>Add Service</button>
+        </div>
+
+        <div id="serviceAlert"></div>
+
+        <!-- Service Alert Banner -->
+        <div class="alert alert-danger d-none align-items-center mb-4 border-start border-4 border-danger shadow-sm" id="serviceAlertBanner" role="alert">
+          <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+          <div>
+            <h6 class="alert-heading fw-bold mb-1">Upcoming Service Alerts — Action Required</h6>
+            <div id="serviceAlertItems" class="small mb-0"></div>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4" id="serviceSummary">
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-primary">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-primary text-uppercase mb-1 small">Total Records</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="summaryTotalService">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-warning">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-warning text-uppercase mb-1 small">Total Cost</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="summaryTotalCost">₹0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-danger">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-danger text-uppercase mb-1 small">Active Alerts</div>
+                <div class="h3 mb-0 fw-bold text-danger" id="summaryAlertsCount">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card glass-panel fade-in-up mb-4">
+          <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-3">
+                <select class="form-select form-select-sm" id="filterVehicle" onchange="loadServiceRecords()">
+                  <option value="">All Vehicles</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="date" class="form-control form-control-sm" id="filterDateFrom" onchange="loadServiceRecords()" placeholder="From Date">
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="date" class="form-control form-control-sm" id="filterDateTo" onchange="loadServiceRecords()" placeholder="To Date">
+              </div>
+              <div class="col-12 col-md-3 text-end">
+                <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearServiceFilters()"><i class="bi bi-x me-1"></i>Clear Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Table -->
+        <div class="card glass-panel fade-in-up">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+              <thead class="table-light">
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Service Date</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Cost (₹)</th>
+                  <th>Mechanic / Garage</th>
+                  <th>Next Service</th>
+                  <th>Days Left</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="serviceTableBody">
+                <tr>
+                  <td colspan="9" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Service Modal -->
+  <div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary" id="serviceModalTitle"><i class="bi bi-wrench me-2"></i>Add Service Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="serviceForm" novalidate>
+          <div class="modal-body">
+            <input type="hidden" id="serviceRecordId">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="serviceVehicle" class="form-label text-secondary small fw-bold">Vehicle *</label>
+                <select id="serviceVehicle" class="form-select" required>
+                  <option value="">Select vehicle</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="serviceDate" class="form-label text-secondary small fw-bold">Service Date *</label>
+                <input type="date" id="serviceDate" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label for="serviceType" class="form-label text-secondary small fw-bold">Service Type *</label>
+                <select id="serviceType" class="form-select" required>
+                  <option value="">Select type</option>
+                  <option value="Oil Change">Oil Change</option>
+                  <option value="Tyre Replacement">Tyre Replacement</option>
+                  <option value="Brake Service">Brake Service</option>
+                  <option value="Engine Overhaul">Engine Overhaul</option>
+                  <option value="AC Service">AC Service</option>
+                  <option value="Electrical Repair">Electrical Repair</option>
+                  <option value="Body Work">Body Work</option>
+                  <option value="General Service">General Service</option>
+                  <option value="Pollution Check">Pollution Check</option>
+                  <option value="Insurance Renewal">Insurance Renewal</option>
+                  <option value="Fitness Certificate">Fitness Certificate</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="serviceCost" class="form-label text-secondary small fw-bold">Service Cost (₹)</label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" id="serviceCost" class="form-control" placeholder="e.g. 5000" step="0.01" min="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="mechanicName" class="form-label text-secondary small fw-bold">Mechanic Name</label>
+                <input type="text" id="mechanicName" class="form-control" placeholder="Mechanic / Workshop name">
+              </div>
+              <div class="col-md-6">
+                <label for="garageName" class="form-label text-secondary small fw-bold">Garage / Workshop</label>
+                <input type="text" id="garageName" class="form-control" placeholder="Garage name">
+              </div>
+              <div class="col-md-12">
+                <label for="nextServiceDate" class="form-label text-secondary small fw-bold">Next Service Date</label>
+                <input type="date" id="nextServiceDate" class="form-control">
+                <small class="text-muted mt-1 d-block">Setting this will update the vehicle's next service reminder.</small>
+              </div>
+              <div class="col-md-12">
+                <label for="serviceDescription" class="form-label text-secondary small fw-bold">Description / Work Done</label>
+                <textarea id="serviceDescription" class="form-control" rows="2" placeholder="Describe the service performed..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="serviceSubmitBtn">
+              <span id="serviceSubmitText"><i class="bi bi-save me-1"></i>Save Record</span>
+              <span id="serviceSubmitSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Saving...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script>
+    // Polyfill service.js modal functions to use Bootstrap Modal
+    let serviceBsModal;
+    document.addEventListener('DOMContentLoaded', () => {
+      serviceBsModal = new bootstrap.Modal(document.getElementById('serviceModal'));
+      
+      const originalOpenAddService = window.openAddService;
+      window.openAddService = function() {
+        document.getElementById('serviceForm').reset();
+        document.getElementById('serviceRecordId').value = '';
+        document.getElementById('serviceModalTitle').innerHTML = '<i class="bi bi-wrench me-2"></i>Add Service Record';
+        serviceBsModal.show();
+      };
+      
+      window.closeServiceModal = function() {
+        serviceBsModal.hide();
+      };
+
+      const originalOpenEditService = window.openEditService;
+      window.openEditService = function(record) {
+        if (!record) return;
+        document.getElementById('serviceModalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Edit Service Record';
+        document.getElementById('serviceRecordId').value = record.id;
+        document.getElementById('serviceVehicle').value = record.vehicle_id;
+        if (record.service_date) document.getElementById('serviceDate').value = record.service_date.substring(0,10);
+        document.getElementById('serviceType').value = record.service_type || '';
+        document.getElementById('serviceCost').value = record.cost || '';
+        document.getElementById('mechanicName').value = record.mechanic_name || '';
+        document.getElementById('garageName').value = record.garage_name || '';
+        document.getElementById('serviceDescription').value = record.description || '';
+        if (record.next_service_date) document.getElementById('nextServiceDate').value = record.next_service_date.substring(0,10);
+        else document.getElementById('nextServiceDate').value = '';
+        
+        serviceBsModal.show();
+      };
+      
+      // Override table render
+      const originalRenderServiceTable = window.renderServiceTable;
+      window.renderServiceTable = function(records) {
+        const tbody = document.getElementById('serviceTableBody');
+        tbody.innerHTML = '';
+
+        if (!records.length) {
+          tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No service records found.</td></tr>';
+          return;
+        }
+
+        records.forEach(r => {
+          const v = vehiclesMap[r.vehicle_id];
+          const vLabel = v ? `${v.vehicle_number}` : 'Unknown';
+          
+          let mechStr = '-';
+          if (r.mechanic_name && r.garage_name) mechStr = `${r.mechanic_name} (${r.garage_name})`;
+          else if (r.mechanic_name) mechStr = r.mechanic_name;
+          else if (r.garage_name) mechStr = r.garage_name;
+
+          let daysLeftStr = '-';
+          let daysLeftNum = null;
+          if (r.next_service_date) {
+            daysLeftNum = getDaysUntil(r.next_service_date);
+            if (daysLeftNum <= 0) daysLeftStr = `<span class="badge bg-danger">OVERDUE</span>`;
+            else if (daysLeftNum <= 7) daysLeftStr = `<span class="badge bg-warning text-dark">${daysLeftNum} days</span>`;
+            else daysLeftStr = `<span class="badge bg-success">${daysLeftNum} days</span>`;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><div class="fw-semibold text-primary">${vLabel}</div></td>
+            <td>${formatDate(r.service_date)}</td>
+            <td><span class="badge bg-secondary">${r.service_type || '-'}</span></td>
+            <td><div class="text-truncate" style="max-width:150px;" title="${r.description}">${r.description || '-'}</div></td>
+            <td class="fw-bold">₹${r.cost || 0}</td>
+            <td>${mechStr}</td>
+            <td>${r.next_service_date ? formatDate(r.next_service_date) : '-'}</td>
+            <td>${daysLeftStr}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick='openEditService(${JSON.stringify(r).replace(/'/g, "\\'")})' title="Edit"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-outline-danger" onclick="deleteServiceRecord(${r.id})" title="Delete"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      };
+      
+      // Override alerts banner
+      const originalShowServiceAlerts = window.showServiceAlerts;
+      window.showServiceAlerts = function(alerts) {
+        const banner = document.getElementById('serviceAlertBanner');
+        const items = document.getElementById('serviceAlertItems');
+        const countBadge = document.getElementById('summaryAlertsCount');
+
+        if (!alerts || alerts.length === 0) {
+          banner.classList.add('d-none');
+          banner.classList.remove('d-flex');
+          if(countBadge) countBadge.textContent = '0';
+          return;
+        }
+
+        banner.classList.remove('d-none');
+        banner.classList.add('d-flex');
+        if(countBadge) countBadge.textContent = alerts.length;
+
+        items.innerHTML = alerts.map(v => {
+          const days = getDaysUntil(v.next_service_date);
+          const daysStr = days <= 0
+            ? `<span class="fw-bold">OVERDUE</span>`
+            : `<span class="fw-bold">${days} day(s) left</span>`;
+          return `
+            <div class="mb-1">
+              <strong>${v.vehicle_number}</strong> (${v.make || ''} ${v.model || ''}) &mdash;
+              Next service: <span class="fw-bold">${formatDate(v.next_service_date)}</span> &mdash; ${daysStr}
+            </div>`;
+        }).join('');
+      };
+    });
+  </script>
+  <script src="js/service.js"></script>
+</body>
+</html>

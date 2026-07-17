@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diesel Records — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link active"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Diesel Records</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="mb-0 fw-bold d-md-none">Diesel Records</h4>
+          <button class="btn btn-primary" onclick="openAddDiesel()"><i class="bi bi-plus-lg me-1"></i>Add Diesel Record</button>
+        </div>
+
+        <div id="dieselAlert"></div>
+
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4" id="dieselSummary">
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-primary">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-primary text-uppercase mb-1 small">Total Records</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="summaryTotalRecords">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-warning">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-warning text-uppercase mb-1 small">Total Cost</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="summaryTotalCost">₹0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card glass-panel fade-in-up h-100 border-start border-4 border-success">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-success text-uppercase mb-1 small">Total Liters</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="summaryTotalLiters">0 L</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card glass-panel fade-in-up mb-4">
+          <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-3">
+                <select class="form-select form-select-sm" id="filterVehicle" onchange="loadDieselRecords()">
+                  <option value="">All Vehicles</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="date" class="form-control form-control-sm" id="filterDateFrom" onchange="loadDieselRecords()" placeholder="From Date">
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="date" class="form-control form-control-sm" id="filterDateTo" onchange="loadDieselRecords()" placeholder="To Date">
+              </div>
+              <div class="col-12 col-md-3 text-end">
+                <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearDieselFilters()"><i class="bi bi-x me-1"></i>Clear Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diesel Table -->
+        <div class="card glass-panel fade-in-up">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+              <thead class="table-light">
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Date & Time</th>
+                  <th>Liters</th>
+                  <th>Cost (₹)</th>
+                  <th>₹/Liter</th>
+                  <th>Pump Station</th>
+                  <th>Trip Route</th>
+                  <th>Bill</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dieselTableBody">
+                <tr>
+                  <td colspan="9" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Diesel Modal -->
+  <div class="modal fade" id="dieselModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary" id="dieselModalTitle"><i class="bi bi-fuel-pump me-2"></i>Add Diesel Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="dieselForm" novalidate>
+          <div class="modal-body">
+            <input type="hidden" id="dieselRecordId">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="dieselVehicle" class="form-label text-secondary small fw-bold">Vehicle *</label>
+                <select id="dieselVehicle" class="form-select" required>
+                  <option value="">Select vehicle</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="dieselDateTime" class="form-label text-secondary small fw-bold">Date & Time *</label>
+                <input type="datetime-local" id="dieselDateTime" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label for="dieselCost" class="form-label text-secondary small fw-bold">Cost (₹) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" id="dieselCost" class="form-control" placeholder="e.g. 5000" step="0.01" min="0" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="dieselLiters" class="form-label text-secondary small fw-bold">Liters Filled</label>
+                <div class="input-group">
+                  <input type="number" id="dieselLiters" class="form-control" placeholder="e.g. 100" step="0.01" min="0">
+                  <span class="input-group-text">L</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="dieselSource" class="form-label text-secondary small fw-bold">Trip Source (City/Address)</label>
+                <input type="text" id="dieselSource" class="form-control" placeholder="e.g. Mumbai">
+              </div>
+              <div class="col-md-6">
+                <label for="dieselDest" class="form-label text-secondary small fw-bold">Trip Destination (City/Address)</label>
+                <input type="text" id="dieselDest" class="form-control" placeholder="e.g. Pune">
+              </div>
+              <div class="col-md-6">
+                <label for="dieselStation" class="form-label text-secondary small fw-bold">Pump Station Name</label>
+                <input type="text" id="dieselStation" class="form-control" placeholder="e.g. HP Fuel Station">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-secondary small fw-bold">Diesel Bill Image</label>
+                <div class="border border-dashed rounded p-3 text-center bg-light cursor-pointer" onclick="document.getElementById('billFile').click()" style="border-style: dashed !important; cursor: pointer;">
+                  <i class="bi bi-receipt display-6 text-muted mb-2"></i>
+                  <p class="small text-muted mb-0">Click to upload bill image/PDF</p>
+                </div>
+                <input type="file" id="billFile" accept="image/*,application/pdf" class="d-none" onchange="handleBillUpload(this)">
+                <div id="billPreview" class="d-none mt-2 alert alert-success py-1 px-2 small mb-0"></div>
+              </div>
+              <div class="col-md-12">
+                <label for="dieselNotes" class="form-label text-secondary small fw-bold">Notes</label>
+                <textarea id="dieselNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="dieselSubmitBtn">
+              <span id="dieselSubmitText"><i class="bi bi-save me-1"></i>Save Record</span>
+              <span id="dieselSubmitSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Saving...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script>
+    // Polyfill diesel.js modal functions to use Bootstrap Modal
+    let dieselBsModal;
+    document.addEventListener('DOMContentLoaded', () => {
+      dieselBsModal = new bootstrap.Modal(document.getElementById('dieselModal'));
+      
+      const originalOpenAddDiesel = window.openAddDiesel;
+      window.openAddDiesel = function() {
+        document.getElementById('dieselForm').reset();
+        document.getElementById('dieselRecordId').value = '';
+        document.getElementById('dieselModalTitle').innerHTML = '<i class="bi bi-fuel-pump me-2"></i>Add Diesel Record';
+        document.getElementById('billPreview').classList.add('d-none');
+        document.getElementById('billPreview').textContent = '';
+        currentBillUrl = null;
+        dieselBsModal.show();
+      };
+      
+      window.closeDieselModal = function() {
+        dieselBsModal.hide();
+      };
+
+      const originalOpenEditDiesel = window.openEditDiesel;
+      window.openEditDiesel = function(record) {
+        if (!record) return;
+        document.getElementById('dieselModalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Edit Diesel Record';
+        document.getElementById('dieselRecordId').value = record.id;
+        document.getElementById('dieselVehicle').value = record.vehicle_id;
+        if (record.date_time) document.getElementById('dieselDateTime').value = record.date_time.substring(0,16);
+        document.getElementById('dieselCost').value = record.cost || '';
+        document.getElementById('dieselLiters').value = record.liters || '';
+        document.getElementById('dieselSource').value = record.trip_source || '';
+        document.getElementById('dieselDest').value = record.trip_destination || '';
+        document.getElementById('dieselStation').value = record.pump_station || '';
+        document.getElementById('dieselNotes').value = record.notes || '';
+        
+        currentBillUrl = record.bill_photo_url || null;
+        const prev = document.getElementById('billPreview');
+        if (currentBillUrl) {
+          prev.classList.remove('d-none');
+          prev.textContent = 'Existing bill attached.';
+        } else {
+          prev.classList.add('d-none');
+          prev.textContent = '';
+        }
+        dieselBsModal.show();
+      };
+      
+      // Override table render
+      const originalRenderDieselTable = window.renderDieselTable;
+      window.renderDieselTable = function(records) {
+        const tbody = document.getElementById('dieselTableBody');
+        tbody.innerHTML = '';
+
+        if (!records.length) {
+          tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No diesel records found matching criteria.</td></tr>';
+          return;
+        }
+
+        records.forEach(r => {
+          const v = vehiclesMap[r.vehicle_id];
+          const vLabel = v ? `${v.vehicle_number}` : 'Unknown';
+          
+          let rate = '-';
+          if (r.cost && r.liters) rate = '₹' + (parseFloat(r.cost) / parseFloat(r.liters)).toFixed(2);
+          
+          let route = '-';
+          if (r.trip_source && r.trip_destination) route = `${r.trip_source} → ${r.trip_destination}`;
+          else if (r.trip_source) route = r.trip_source;
+          else if (r.trip_destination) route = r.trip_destination;
+
+          let billLink = '-';
+          if (r.bill_photo_url) {
+            billLink = `<a href="${API_BASE_URL}/${r.bill_photo_url}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Bill"><i class="bi bi-receipt"></i></a>`;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><div class="fw-semibold text-primary">${vLabel}</div></td>
+            <td>${formatDate(r.date_time)}</td>
+            <td>${r.liters ? r.liters + ' L' : '-'}</td>
+            <td class="fw-bold text-success">₹${r.cost || 0}</td>
+            <td>${rate}</td>
+            <td>${r.pump_station || '-'}</td>
+            <td><div class="text-truncate" style="max-width:150px;" title="${route}">${route}</div></td>
+            <td>${billLink}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick='openEditDiesel(${JSON.stringify(r).replace(/'/g, "\\'")})' title="Edit"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-outline-danger" onclick="deleteDieselRecord(${r.id})" title="Delete"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      };
+      
+      // Override bill upload handler slightly
+      window.handleBillUpload = function(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const prev = document.getElementById('billPreview');
+        prev.classList.remove('d-none');
+        prev.innerHTML = `<i class="bi bi-check-circle me-1"></i> Selected: <strong>${file.name}</strong>`;
+      };
+    });
+  </script>
+  <script src="js/diesel.js"></script>
+</body>
+</html>

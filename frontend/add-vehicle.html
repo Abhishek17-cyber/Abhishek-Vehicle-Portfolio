@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Vehicle — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link active"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Add New Vehicle</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <a href="dashboard.html" class="btn btn-dark btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
+        </div>
+
+        <div id="formAlert"></div>
+
+        <form id="addVehicleForm" class="needs-validation" novalidate>
+          
+          <div class="row g-4">
+            <div class="col-xl-8">
+              <!-- Vehicle Information -->
+              <div class="card glass-panel fade-in-up mb-4">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h6 class="m-0 font-weight-bold text-primary text-uppercase"><i class="bi bi-truck me-2"></i>Vehicle Information</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="vehicleNumber" class="form-label text-secondary fw-semibold small">Registration Number *</label>
+                      <input type="text" id="vehicleNumber" class="form-control" placeholder="e.g. MH 12 AB 1234" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="make" class="form-label text-secondary fw-semibold small">Make (Brand) *</label>
+                      <input type="text" id="make" class="form-control" placeholder="e.g. Tata, Ashok Leyland" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="model" class="form-label text-secondary fw-semibold small">Model *</label>
+                      <input type="text" id="model" class="form-control" placeholder="e.g. 407, Prima" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="year" class="form-label text-secondary fw-semibold small">Year of Manufacture</label>
+                      <input type="number" id="year" class="form-control" placeholder="e.g. 2020" min="1990" max="2030">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="purchaseDate" class="form-label text-secondary fw-semibold small">Purchase Date</label>
+                      <input type="date" id="purchaseDate" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="status" class="form-label text-secondary fw-semibold small">Vehicle Status</label>
+                      <select id="status" class="form-select">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="in_service">In Service</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="length" class="form-label text-secondary fw-semibold small">Vehicle Length</label>
+                      <div class="input-group">
+                        <input type="number" id="length" class="form-control" placeholder="e.g. 12.5" step="0.01">
+                        <select id="lengthUnit" class="form-select" style="max-width:100px;">
+                          <option value="meters">m</option>
+                          <option value="feet">ft</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="weight" class="form-label text-secondary fw-semibold small">Vehicle Weight</label>
+                      <div class="input-group">
+                        <input type="number" id="weight" class="form-control" placeholder="e.g. 5.5" step="0.01">
+                        <select id="weightUnit" class="form-select" style="max-width:100px;">
+                          <option value="tons">Tons</option>
+                          <option value="kg">KG</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                      <label for="description" class="form-label text-secondary fw-semibold small">Description / Notes</label>
+                      <textarea id="description" class="form-control" rows="3" placeholder="Any additional information about this vehicle..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Driver Information -->
+              <div class="card glass-panel fade-in-up mb-4">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h6 class="m-0 font-weight-bold text-success text-uppercase"><i class="bi bi-person me-2"></i>Driver Info</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                  <div class="mb-3">
+                    <label for="driverUserSelect" class="form-label text-secondary fw-semibold small">Link Driver Account</label>
+                    <select id="driverUserSelect" class="form-select">
+                      <option value="">No Driver Account Linked</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="driverName" class="form-label text-secondary fw-semibold small">Driver Name (Display)</label>
+                    <input type="text" id="driverName" class="form-control" placeholder="Driver full name">
+                  </div>
+                  <div class="mb-3">
+                    <label for="driverPhone" class="form-label text-secondary fw-semibold small">Driver Phone</label>
+                    <input type="tel" id="driverPhone" class="form-control" placeholder="+91 98765 43210">
+                  </div>
+                  <div class="mb-0">
+                    <label for="driverSalary" class="form-label text-secondary fw-semibold small">Salary (₹/month)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">₹</span>
+                      <input type="number" id="driverSalary" class="form-control" placeholder="25000" step="0.01">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-xl-4">
+              <!-- Photo Upload -->
+              <div class="card glass-panel fade-in-up mb-4">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h6 class="m-0 font-weight-bold text-primary text-uppercase"><i class="bi bi-camera me-2"></i>Photo</h6>
+                </div>
+                <div class="card-body text-center pb-4">
+                  <div class="p-4 border border-dashed rounded bg-light cursor-pointer" id="photoDropZone" onclick="document.getElementById('vehiclePhotoInput').click()" style="cursor: pointer; border-style: dashed !important;">
+                    <i class="bi bi-cloud-arrow-up display-4 text-muted mb-2"></i>
+                    <p class="mb-1 text-muted">Click to upload photo</p>
+                    <small class="text-muted">JPG, PNG (Max 5MB)</small>
+                  </div>
+                  <input type="file" id="vehiclePhotoInput" accept="image/*" class="d-none" onchange="previewPhoto(this)">
+                  
+                  <div id="photoPreview" class="mt-3 d-none">
+                    <img id="previewImg" src="" alt="Preview" class="img-fluid rounded border mb-2" style="max-height:180px; object-fit: cover;">
+                    <div>
+                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearPhoto()"><i class="bi bi-trash me-1"></i>Remove</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Owner Information -->
+              <div class="card glass-panel fade-in-up mb-4">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h6 class="m-0 font-weight-bold text-warning text-uppercase"><i class="bi bi-person-badge me-2"></i>Owner Info</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                  <div class="mb-3">
+                    <label for="ownerName" class="form-label text-secondary fw-semibold small">Owner Name *</label>
+                    <input type="text" id="ownerName" class="form-control" placeholder="Full name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="ownerPhone" class="form-label text-secondary fw-semibold small">Owner Phone *</label>
+                    <input type="tel" id="ownerPhone" class="form-control" placeholder="+91 98765 43210" required>
+                  </div>
+                  <div class="mb-0">
+                    <label for="ownerAddress" class="form-label text-secondary fw-semibold small">Owner Address</label>
+                    <textarea id="ownerAddress" class="form-control" rows="2" placeholder="Full address..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+
+
+              <!-- Service Reminder -->
+              <div class="card glass-panel fade-in-up mb-4">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h6 class="m-0 font-weight-bold text-danger text-uppercase"><i class="bi bi-wrench me-2"></i>Service</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                  <div class="mb-3">
+                    <label for="nextServiceDate" class="form-label text-secondary fw-semibold small">Next Service Date</label>
+                    <input type="date" id="nextServiceDate" class="form-control">
+                  </div>
+                  <div class="mb-0">
+                    <label for="serviceReminderDays" class="form-label text-secondary fw-semibold small">Remind Before (days)</label>
+                    <input type="number" id="serviceReminderDays" class="form-control" value="7" min="1" max="30">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="card glass-panel fade-in-up mb-5">
+            <div class="card-body p-4 text-end">
+              <a href="dashboard.html" class="btn btn-light me-2">Cancel</a>
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span id="submitBtnText"><i class="bi bi-check2-circle me-1"></i>Save Vehicle</span>
+                <span id="submitSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...</span>
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script>
+    // Polyfill UI functions specific to the old dashboard.css that vehicle.js uses.
+    // vehicle.js calls showAlert which is defined in auth.js. We need to make sure auth.js's showAlert works with bootstrap.
+    // vehicle.js also does direct DOM manipulation. We provided standard bootstrap classes so most will work directly.
+    function showPhotoPreview(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('photoPreview').classList.remove('d-none');
+        document.getElementById('photoDropZone').classList.add('d-none');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearPhoto() {
+      document.getElementById('vehiclePhotoInput').value = '';
+      document.getElementById('photoPreview').classList.add('d-none');
+      document.getElementById('photoDropZone').classList.remove('d-none');
+    }
+  </script>
+  <script src="js/vehicle.js"></script>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Detail — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Vehicle Detail</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-3">Loading vehicle details...</p>
+        </div>
+
+        <div id="vehicleDetailContent" class="d-none">
+          
+          <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+              <a href="dashboard.html" class="btn btn-outline-secondary btn-sm me-2"><i class="bi bi-arrow-left me-1"></i>Back</a>
+              <h4 class="d-inline-block mb-0 fw-bold align-middle" id="detailTitle">Vehicle</h4>
+            </div>
+            <div class="d-flex gap-2" id="detailActions">
+              <button class="btn btn-primary btn-sm" onclick="toggleEdit()"><i class="bi bi-pencil me-1"></i>Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteVehicle()"><i class="bi bi-trash me-1"></i>Delete</button>
+            </div>
+          </div>
+
+          <!-- Vehicle Header Card -->
+          <div class="card glass-panel fade-in-up mb-4 overflow-hidden">
+            <div class="row g-0">
+              <div class="col-md-4 bg-light d-flex align-items-center justify-content-center" style="min-height:200px;" id="detailImageContainer">
+                <i class="bi bi-truck display-1 text-muted opacity-50"></i>
+              </div>
+              <div class="col-md-8">
+                <div class="card-body h-100 d-flex flex-column">
+                  
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                      <h3 class="card-title fw-bold text-primary mb-1" id="detailNumber">—</h3>
+                      <p class="card-subtitle text-muted mb-2" id="detailModel">—</p>
+                      <div id="detailStatusBadge"></div>
+                    </div>
+                    
+                    <div id="serviceReminder" class="text-end d-none bg-danger bg-opacity-10 rounded p-2 border border-danger border-opacity-25">
+                      <div class="fw-bold fs-4 text-danger" id="countdownDays">—</div>
+                      <div class="small text-danger fw-semibold">Days Until Service</div>
+                      <div class="small text-muted mt-1" id="serviceDate"></div>
+                    </div>
+                  </div>
+
+                  <div class="row mt-auto g-3 pt-3 border-top">
+                    <div class="col-sm-6 col-md-3">
+                      <div class="small text-muted text-uppercase fw-semibold mb-1"><i class="bi bi-person-badge me-1"></i>Owner</div>
+                      <div class="fw-semibold text-dark text-truncate" id="quickOwner">—</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                      <div class="small text-muted text-uppercase fw-semibold mb-1"><i class="bi bi-telephone me-1"></i>Owner Phone</div>
+                      <div class="fw-semibold text-dark text-truncate" id="quickOwnerPhone">—</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                      <div class="small text-muted text-uppercase fw-semibold mb-1"><i class="bi bi-person me-1"></i>Driver</div>
+                      <div class="fw-semibold text-dark text-truncate" id="quickDriver">—</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                      <div class="small text-muted text-uppercase fw-semibold mb-1"><i class="bi bi-telephone me-1"></i>Driver Phone</div>
+                      <div class="fw-semibold text-dark text-truncate" id="quickDriverPhone">—</div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nav Tabs -->
+          <ul class="nav nav-tabs mb-4" id="vehicleTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-semibold" id="info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab"><i class="bi bi-info-circle me-2"></i>Info</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="trips-tab" data-bs-toggle="tab" data-bs-target="#tab-trips" type="button" role="tab"><i class="bi bi-signpost-split me-2"></i>Trips</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="diesel-tab" data-bs-toggle="tab" data-bs-target="#tab-diesel" type="button" role="tab"><i class="bi bi-fuel-pump me-2"></i>Diesel</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="service-tab" data-bs-toggle="tab" data-bs-target="#tab-service" type="button" role="tab"><i class="bi bi-wrench me-2"></i>Service</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="docs-tab" data-bs-toggle="tab" data-bs-target="#tab-docs" type="button" role="tab"><i class="bi bi-folder me-2"></i>Documents</button>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="vehicleTabsContent">
+            
+            <!-- Info Tab -->
+            <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+              <div class="row g-4">
+                <div class="col-md-4">
+                  <div class="card glass-panel fade-in-up h-100">
+                    <div class="card-header bg-transparent py-3">
+                      <h6 class="m-0 font-weight-bold text-primary text-uppercase"><i class="bi bi-truck me-2"></i>Vehicle Details</h6>
+                    </div>
+                    <div class="card-body" id="vehicleDetailFields"></div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card glass-panel fade-in-up h-100">
+                    <div class="card-header bg-transparent py-3">
+                      <h6 class="m-0 font-weight-bold text-warning text-uppercase"><i class="bi bi-person-badge me-2"></i>Owner Details</h6>
+                    </div>
+                    <div class="card-body" id="ownerDetailFields"></div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card glass-panel fade-in-up h-100">
+                    <div class="card-header bg-transparent py-3">
+                      <h6 class="m-0 font-weight-bold text-success text-uppercase"><i class="bi bi-person me-2"></i>Driver Details</h6>
+                    </div>
+                    <div class="card-body" id="driverDetailFields"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trips Tab -->
+            <div class="tab-pane fade" id="tab-trips" role="tabpanel">
+              <div class="card glass-panel fade-in-up">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Load</th>
+                        <th>Distance (km)</th>
+                        <th>Toll Up</th>
+                        <th>Toll Down</th>
+                        <th>Total Toll</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="vehicleTripsBody">
+                      <tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Diesel Tab -->
+            <div class="tab-pane fade" id="tab-diesel" role="tabpanel">
+              <div class="card glass-panel fade-in-up">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>Liters</th>
+                        <th>Cost</th>
+                        <th>Pump Station</th>
+                        <th>Trip Route</th>
+                        <th>Bill</th>
+                      </tr>
+                    </thead>
+                    <tbody id="vehicleDieselBody">
+                      <tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Tab -->
+            <div class="tab-pane fade" id="tab-service" role="tabpanel">
+              <div class="card glass-panel fade-in-up">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Cost</th>
+                        <th>Mechanic / Garage</th>
+                        <th>Next Service</th>
+                      </tr>
+                    </thead>
+                    <tbody id="vehicleServiceBody">
+                      <tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div class="tab-pane fade" id="tab-docs" role="tabpanel">
+              <div class="mb-4">
+                <a href="uploads.html" class="btn btn-primary btn-sm"><i class="bi bi-cloud-arrow-up me-2"></i>Upload New Document</a>
+              </div>
+              <div class="row g-3" id="vehicleDocsGrid">
+                <div class="col-12 text-center py-4 text-muted">
+                  <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary"><i class="bi bi-pencil me-2"></i>Edit Vehicle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="editModalContent">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  
+  <script>
+    // Polyfill UI functions specific to the old CSS that vehicle.js uses.
+    // Instead of completely rewriting vehicle.js, we intercept the DOM updates for Bootstrap compatibility.
+    document.addEventListener('DOMContentLoaded', () => {
+      // Intercept renderInfoFields which is used by vehicle.js
+      window.renderInfoFields = function(containerId, fields) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = fields.map(f => `
+          <div class="mb-3">
+            <div class="small text-muted text-uppercase fw-semibold mb-1">${f.label}</div>
+            <div class="fw-semibold text-dark">${f.value || 'N/A'}</div>
+          </div>
+        `).join('');
+      };
+
+      // Polyfill toggleEdit to use Bootstrap Modal
+      const originalToggleEdit = window.toggleEdit;
+      window.toggleEdit = function() {
+        if (!currentVehicle) return;
+        
+        // We will override the innerHTML content generation here to use bootstrap forms
+        const v = currentVehicle;
+        const content = document.getElementById('editModalContent');
+        
+        content.innerHTML = `
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Vehicle Number</label><input type="text" id="editVehicleNumber" class="form-control" value="${v.vehicle_number || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Make</label><input type="text" id="editMake" class="form-control" value="${v.make || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Model</label><input type="text" id="editModel" class="form-control" value="${v.model || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Year</label><input type="number" id="editYear" class="form-control" value="${v.year || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Owner Name</label><input type="text" id="editOwnerName" class="form-control" value="${v.owner_name || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Owner Phone</label><input type="text" id="editOwnerPhone" class="form-control" value="${v.owner_phone || ''}"></div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small fw-bold">Link Driver Account</label>
+              <select id="editDriverUserSelect" class="form-select">
+                <option value="">No Driver Account Linked</option>
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Name (Display)</label><input type="text" id="editDriverName" class="form-control" value="${v.driver_name || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Phone</label><input type="text" id="editDriverPhone" class="form-control" value="${v.driver_phone || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Salary (₹)</label><input type="number" id="editDriverSalary" class="form-control" value="${v.driver_salary || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Next Service Date</label><input type="date" id="editNextService" class="form-control" value="${v.next_service_date ? v.next_service_date.split('T')[0] : ''}"></div>
+            <div class="col-md-12">
+              <label class="form-label text-secondary small fw-bold">Status</label>
+              <select id="editStatus" class="form-select">
+                <option value="active" ${v.status === 'active' ? 'selected' : ''}>Active</option>
+                <option value="inactive" ${v.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                <option value="in_service" ${v.status === 'in_service' ? 'selected' : ''}>In Service</option>
+              </select>
+            </div>
+            <div class="col-md-12"><label class="form-label text-secondary small fw-bold">Owner Address</label><textarea id="editOwnerAddress" class="form-control" rows="2">${v.owner_address || ''}</textarea></div>
+            <div class="col-md-12"><label class="form-label text-secondary small fw-bold">Description</label><textarea id="editDescription" class="form-control" rows="2">${v.description || ''}</textarea></div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" onclick="saveVehicle()"><i class="bi bi-save me-2"></i>Save Changes</button>
+          </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
+        modal.show();
+        loadDriverDropdown('editDriverUserSelect', v.driver_user_id);
+      };
+      
+      window.closeModal = function() {
+        const modalEl = document.getElementById('editModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      };
+
+      // Intercept renderVehicleDetail to use bootstrap classes for badge
+      const originalRenderVehicleDetail = window.renderVehicleDetail;
+      window.renderVehicleDetail = function(v) {
+        originalRenderVehicleDetail(v); // Let it do its data binding
+        
+        // Then override the badge and UI specifically for Bootstrap
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('vehicleDetailContent').classList.remove('d-none');
+        document.getElementById('vehicleDetailContent').classList.remove('hidden'); // legacy
+        
+        const badgeClass = v.status === 'active' ? 'bg-success' : v.status === 'in_service' ? 'bg-warning text-dark' : 'bg-secondary';
+        const badgeText = v.status === 'active' ? 'Active' : v.status === 'in_service' ? 'In Service' : 'Inactive';
+        document.getElementById('detailStatusBadge').innerHTML = `<span class="badge ${badgeClass}">${badgeText}</span>`;
+        
+        if (v.photo_url) {
+          const imgContainer = document.getElementById('detailImageContainer');
+          imgContainer.innerHTML = `<img src="${API_BASE_URL}/${v.photo_url}" alt="${v.vehicle_number}" class="img-fluid w-100 h-100 object-fit-cover">`;
+          imgContainer.classList.remove('p-5'); // remove padding if any
+        }
+        
+        const reminder = document.getElementById('serviceReminder');
+        if (v.next_service_date) {
+          reminder.classList.remove('d-none');
+        } else {
+          reminder.classList.add('d-none');
+        }
+
+        // Hide Edit/Delete buttons for Driver role
+        const user = getCurrentUser();
+        if (user && user.role === 'driver') {
+          const actionsRow = document.getElementById('detailActions');
+          if (actionsRow) actionsRow.style.display = 'none';
+        }
+      };
+
+      // Intercept docs load to use bootstrap grid
+      const originalLoadVehicleDocs = window.loadVehicleDocs;
+      window.loadVehicleDocs = async function(vehicleId) {
+        const token = getToken();
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/uploads?vehicle_id=${vehicleId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) return;
+          const docs = await res.json();
+          const grid = document.getElementById('vehicleDocsGrid');
+          if (!docs.length) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-4">No documents uploaded yet</div>';
+            return;
+          }
+          grid.innerHTML = docs.map(doc => {
+            const isImage = doc.file_name && /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.file_name);
+            return `
+              <div class="col-6 col-sm-4 col-md-3">
+                <div class="card h-100 border shadow-sm">
+                  ${isImage
+                    ? `<img src="${API_BASE_URL}/${doc.file_url}" alt="${doc.file_name}" class="card-img-top object-fit-cover cursor-pointer" style="height:120px;" onclick="window.open('${API_BASE_URL}/${doc.file_url}', '_blank')">`
+                    : `<div class="bg-light d-flex align-items-center justify-content-center cursor-pointer" style="height:120px;" onclick="window.open('${API_BASE_URL}/${doc.file_url}', '_blank')"><i class="bi bi-file-earmark-text display-4 text-secondary"></i></div>`
+                  }
+                  <div class="card-body p-2 text-center text-truncate small">
+                    ${doc.file_name}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } catch(e) { console.error(e); }
+      };
+
+    });
+  </script>
+  
+  <script src="js/vehicle.js"></script>
+</body>
+</html>

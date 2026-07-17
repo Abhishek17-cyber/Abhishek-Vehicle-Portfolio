@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Fleet Management System</title>
+  
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #main-content {
+      background: var(--main-content-bg-grad), url('images/fleet-sunset.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="border-end d-flex flex-column" id="sidebar">
+      <div class="sidebar-heading text-dark fw-bold py-4 fs-5 text-center text-uppercase border-bottom border-secondary mb-3">
+        <img src="images/hub-logo.png" alt="Logo" style="width: 35px; margin-right: 10px; border-radius: 5px;">Transport Hub
+      </div>
+      <div class="list-group list-group-flush px-2 flex-grow-1">
+        <div class="sidebar-heading">Main</div>
+        <a href="#" class="nav-link active" id="nav-dashboard" onclick="switchMainTab('dashboard'); return false;"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="analytics.html" class="nav-link" id="nav-analytics"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+        <a href="add-vehicle.html" class="nav-link" id="nav-add-vehicle"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</a>
+        
+        <div class="sidebar-heading mt-4" id="nav-mgmt-heading">Management</div>
+        <a href="#" class="nav-link" id="nav-drivers" onclick="switchMainTab('drivers'); return false;"><i class="bi bi-people me-2"></i>My Drivers</a>
+        <a href="hire-drivers.html" class="nav-link" id="nav-hire-drivers"><i class="bi bi-person-plus me-2"></i>Hire Drivers</a>
+
+        <div class="sidebar-heading mt-4">Records</div>
+        <a href="trips.html" class="nav-link"><i class="bi bi-signpost-split me-2"></i>Trips</a>
+        <a href="diesel.html" class="nav-link"><i class="bi bi-fuel-pump me-2"></i>Diesel</a>
+        <a href="service.html" class="nav-link d-flex justify-content-between align-items-center" id="serviceNavItem">
+          <span><i class="bi bi-wrench me-2"></i>Service</span>
+          <span class="badge bg-danger rounded-pill d-none" id="serviceAlertCount">0</span>
+        </a>
+        <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
+        
+        <div class="sidebar-heading mt-4">Documents</div>
+        <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
+      </div>
+      <div class="mt-auto px-2 pb-3">
+        <a href="#" class="nav-link text-danger" onclick="logout(); return false;"><i class="bi bi-power me-2"></i>Logout</a>
+      </div>
+    </div>
+    <!-- /#sidebar -->
+
+    <!-- Page Content -->
+    <div id="main-content" class="w-100 d-flex flex-column">
+      
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+        <div class="d-flex align-items-center w-100 justify-content-between">
+          <button class="btn btn-outline-secondary d-md-none me-3" id="menuToggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          
+          <div class="d-flex align-items-center d-none d-md-flex">
+            <h4 class="mb-0 fw-bold text-dark">Dashboard</h4>
+          </div>
+
+          <div class="d-flex align-items-center ms-auto gap-3">
+            <div class="text-muted small d-none d-sm-block">
+              <span class="spinner-grow spinner-grow-sm text-success me-1" role="status"></span>
+              <span id="lastUpdated">Live</span>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle d-flex align-items-center border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;" id="userAvatar">A</div>
+                <span id="userName" class="d-none d-sm-inline">Admin</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" onclick="logout(); return false;">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="container-fluid p-4 overflow-auto flex-grow-1">
+        
+        <!-- Dashboard Section -->
+        <div id="dashboardSection">
+          <!-- Service Alert Banner -->
+          <div class="alert alert-danger d-none align-items-center mb-4 border-start border-4 border-danger shadow-sm" id="serviceAlertBanner" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+              <h6 class="alert-heading fw-bold mb-1">Service Alerts — Action Required</h6>
+              <div id="alertBannerItems" class="small mb-0"></div>
+            </div>
+          </div>
+
+          <!-- Hero Section / Welcome -->
+          <div class="card glass-panel fade-in-up mb-4">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div>
+                <h3 class="fw-bold mb-1" id="welcomeUserTitle">Welcome to Fleet Admin</h3>
+                <p class="text-muted mb-0" id="welcomeUserSub">Monitor your entire vehicle fleet and operations in real-time.</p>
+              </div>
+              <div class="d-flex gap-2" id="dashboardActions">
+                <button class="btn btn-outline-secondary" onclick="refreshDashboard()"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+                <a href="add-vehicle.html" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Vehicle</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="row g-4 mb-4" id="statsGrid">
+            <div class="col-sm-6 col-xl-3">
+              <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-primary">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs fw-bold text-primary text-uppercase mb-1 small">Total Vehicles</div>
+                      <div class="h3 mb-0 fw-bold text-dark" id="statVehicles">—</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="bi bi-truck fs-1 text-muted opacity-50"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-sm-6 col-xl-3">
+              <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-success">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs fw-bold text-success text-uppercase mb-1 small">Total Trips</div>
+                      <div class="h3 mb-0 fw-bold text-dark" id="statTrips">—</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="bi bi-signpost-split fs-1 text-muted opacity-50"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-sm-6 col-xl-3">
+              <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-warning">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs fw-bold text-warning text-uppercase mb-1 small">Diesel Cost</div>
+                      <div class="h3 mb-0 fw-bold text-dark" id="statDiesel">—</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="bi bi-fuel-pump fs-1 text-muted opacity-50"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+              <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-danger">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs fw-bold text-danger text-uppercase mb-1 small">Service Alerts</div>
+                      <div class="h3 mb-0 fw-bold text-dark" id="statService">—</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="bi bi-tools fs-1 text-muted opacity-50"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div class="row g-3 mb-4" id="quickLinksRow">
+            <div class="col-6 col-md-3">
+              <a href="trips.html" class="card glass-panel fade-in-up text-center text-decoration-none h-100 p-3">
+                <i class="bi bi-signpost-split fs-2 text-primary mb-2"></i>
+                <span class="fw-semibold text-dark">Trips</span>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="diesel.html" class="card glass-panel fade-in-up text-center text-decoration-none h-100 p-3">
+                <i class="bi bi-fuel-pump fs-2 text-primary mb-2"></i>
+                <span class="fw-semibold text-dark">Diesel</span>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="service.html" class="card glass-panel fade-in-up text-center text-decoration-none h-100 p-3">
+                <i class="bi bi-wrench fs-2 text-primary mb-2"></i>
+                <span class="fw-semibold text-dark">Service</span>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="uploads.html" class="card glass-panel fade-in-up text-center text-decoration-none h-100 p-3">
+                <i class="bi bi-file-earmark-arrow-up fs-2 text-primary mb-2"></i>
+                <span class="fw-semibold text-dark">Upload Bills</span>
+              </a>
+            </div>
+          </div>
+          
+          <!-- hover styles moved to style.css -->
+
+          <!-- Vehicles Grid Section -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">My Vehicles <span id="vehicleCount" class="badge bg-secondary ms-2 fw-normal"></span></h5>
+            <a href="add-vehicle.html" class="btn btn-sm btn-primary" id="addVehicleGridBtn">Add New</a>
+          </div>
+
+          <!-- Vehicles Container -->
+          <div class="row g-4" id="vehiclesGrid">
+            <!-- Cards rendered by JS -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="vehiclesEmpty" class="text-center py-5 d-none bg-white rounded shadow-sm">
+            <i class="bi bi-truck display-1 text-muted mb-3 opacity-25"></i>
+            <h4>No Vehicles Yet</h4>
+            <p class="text-muted">Add your first vehicle to start tracking your fleet.</p>
+            <a href="add-vehicle.html" class="btn btn-primary mt-2">Add Vehicle</a>
+          </div>
+
+          <!-- Loading State -->
+          <div id="vehiclesLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-3">Loading vehicles...</p>
+          </div>
+        </div>
+
+        <!-- Drivers Section -->
+        <div id="driversSection" class="d-none">
+          <!-- Welcome/Hero Card -->
+          <div class="card glass-panel fade-in-up mb-4">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div>
+                <h3 class="fw-bold mb-1">Driver Management</h3>
+                <p class="text-muted mb-0">Create and manage access credentials for your drivers.</p>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary fs-6 p-2">Total Drivers: <span id="driverCountText">0</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <!-- Left Side: Add Driver Form -->
+            <div class="col-md-4">
+              <div class="card glass-panel fade-in-up">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h5 class="fw-bold text-dark mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Add Driver Account</h5>
+                </div>
+                <div class="card-body">
+                  <div id="driverFormAlert" class="alert d-none py-2"></div>
+                  <form id="addDriverForm">
+                    <div class="mb-3">
+                      <label for="driverUsername" class="form-label small fw-bold text-secondary">Unique Driver ID</label>
+                      <input type="text" class="form-control" id="driverUsername" placeholder="e.g. driver_john" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="driverPassword" class="form-label small fw-bold text-secondary">Password</label>
+                      <input type="password" class="form-control" id="driverPassword" placeholder="Minimum 6 characters" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="driverVehicleInput" class="form-label small fw-bold text-secondary">Assign Vehicle (Vehicle Number)</label>
+                      <input type="text" class="form-control" id="driverVehicleInput" list="vehicleSuggestions" placeholder="e.g. MH-12-PQ-9999 (Optional)">
+                      <datalist id="vehicleSuggestions"></datalist>
+                    </div>
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-primary" id="driverSubmitBtn">
+                        <span id="driverSubmitBtnText">Create Account</span>
+                        <span id="driverSubmitSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Drivers List -->
+            <div class="col-md-8">
+              <div class="card glass-panel fade-in-up">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                  <h5 class="fw-bold text-dark mb-0"><i class="bi bi-people me-2 text-primary"></i>Registered Drivers</h5>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Driver</th>
+                        <th>Assigned Vehicle</th>
+                        <th>Created Date</th>
+                        <th class="text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="driversListBody">
+                      <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Loading drivers...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
