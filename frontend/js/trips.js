@@ -116,28 +116,37 @@ async function silentRefreshTrips() {
 function renderTrips(trips) {
   const tbody = document.getElementById('tripsTableBody');
   if (!trips.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-secondary); padding:40px;">No trips found. Add your first trip!</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-muted">No trips found matching criteria.</td></tr>';
     return;
   }
 
   tbody.innerHTML = trips.map(t => {
     const vehicle = tripVehicles.find(v => v.id === t.vehicle_id);
-    const statusClass = { completed: 'badge-active', in_progress: 'badge-service', planned: 'badge-inactive' }[t.status] || 'badge-inactive';
+    const vLabel = vehicle ? `${vehicle.vehicle_number}` : (t.vehicle_id || 'Unknown');
+    
+    let sBadge = `<span class="badge bg-secondary">Planned</span>`;
+    if (t.status === 'in_progress') sBadge = `<span class="badge bg-warning text-dark">In Progress</span>`;
+    if (t.status === 'completed') sBadge = `<span class="badge bg-success">Completed</span>`;
+
     return `
       <tr>
-        <td><strong>${vehicle ? vehicle.vehicle_number : t.vehicle_id}</strong></td>
+        <td><div class="fw-semibold text-primary">${vLabel}</div></td>
         <td>${formatDateTime(t.trip_date)}</td>
-        <td>${t.source_address}${t.source_city ? '<br><small style="color:var(--text-secondary);">' + t.source_city + '</small>' : ''}</td>
-        <td>${t.destination_address}${t.destination_city ? '<br><small style="color:var(--text-secondary);">' + t.destination_city + '</small>' : ''}</td>
-        <td>${t.load_weight ? t.load_weight + ' ' + (t.load_unit || 'tons') : '—'}</td>
-        <td>${t.distance_km ? t.distance_km + ' km' : '—'}</td>
-        <td>${formatCurrency(t.toll_fee_up)}</td>
-        <td>${formatCurrency(t.toll_fee_down)}</td>
-        <td style="color:var(--accent-gold); font-weight:700;">${formatCurrency(t.total_toll)}</td>
-        <td><span class="badge ${statusClass}">${t.status}</span></td>
+        <td><div class="text-truncate" style="max-width:120px;" title="${t.source_address}">${t.source_address}</div></td>
+        <td><div class="text-truncate" style="max-width:120px;" title="${t.destination_address}">${t.destination_address}</div></td>
+        <td>${t.load_weight ? t.load_weight + ' ' + (t.load_unit||'t') : '-'}</td>
+        <td>${t.distance_km ? t.distance_km + ' km' : '-'}</td>
+        <td>₹${parseFloat(t.toll_fee_up || 0).toLocaleString('en-IN')}</td>
+        <td>₹${parseFloat(t.toll_fee_down || 0).toLocaleString('en-IN')}</td>
+        <td class="fw-bold">₹${parseFloat(t.total_toll || 0).toLocaleString('en-IN')}</td>
+        <td class="fw-bold text-success">₹${parseFloat(t.revenue || 0).toLocaleString('en-IN')}</td>
+        <td class="fw-bold text-success">₹${parseFloat(t.load_rental || 0).toLocaleString('en-IN')}</td>
+        <td>${sBadge}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="editTrip(${t.id})" title="Edit">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteTrip(${t.id})" title="Delete" style="margin-left:4px;">🗑️</button>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" onclick="editTrip(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-outline-danger" onclick="deleteTrip(${t.id})" title="Delete"><i class="bi bi-trash"></i></button>
+          </div>
         </td>
       </tr>
     `;
@@ -243,6 +252,8 @@ async function editTrip(id) {
   document.getElementById('tripLoadWeight').value = trip.load_weight || '';
   document.getElementById('tripLoadUnit').value = trip.load_unit || 'tons';
   document.getElementById('tripDistance').value = trip.distance_km || '';
+  document.getElementById('tripRevenue').value = trip.revenue || 0;
+  document.getElementById('tripLoadRental').value = trip.load_rental || 0;
   document.getElementById('tripStatus').value = trip.status || 'planned';
   document.getElementById('tripNotes').value = trip.notes || '';
 
