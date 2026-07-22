@@ -141,6 +141,7 @@ function renderTrips(trips) {
         <td class="fw-bold">₹${parseFloat(t.total_toll || 0).toLocaleString('en-IN')}</td>
         <td class="fw-bold text-success">₹${parseFloat(t.revenue || 0).toLocaleString('en-IN')}</td>
         <td class="fw-bold text-success">₹${parseFloat(t.load_rental || 0).toLocaleString('en-IN')}</td>
+        <td class="fw-bold text-warning">₹${(parseFloat(t.loading_cost || 0) + parseFloat(t.unloading_cost || 0) + parseFloat(t.rto_charges || 0)).toLocaleString('en-IN')}</td>
         <td>${sBadge}</td>
         <td>
           <div class="btn-group btn-group-sm">
@@ -254,6 +255,9 @@ async function editTrip(id) {
   document.getElementById('tripDistance').value = trip.distance_km || '';
   document.getElementById('tripRevenue').value = trip.revenue || 0;
   document.getElementById('tripLoadRental').value = trip.load_rental || 0;
+  document.getElementById('tripLoadingCost').value = trip.loading_cost || 0;
+  document.getElementById('tripUnloadingCost').value = trip.unloading_cost || 0;
+  document.getElementById('tripRtoCost').value = trip.rto_charges || 0;
   document.getElementById('tripStatus').value = trip.status || 'planned';
   document.getElementById('tripNotes').value = trip.notes || '';
 
@@ -301,6 +305,9 @@ document.getElementById('tripForm').addEventListener('submit', async (e) => {
     distance_km: document.getElementById('tripDistance').value || null,
     revenue: parseFloat(document.getElementById('tripRevenue').value || 0),
     load_rental: parseFloat(document.getElementById('tripLoadRental').value || 0),
+    loading_cost: parseFloat(document.getElementById('tripLoadingCost').value || 0),
+    unloading_cost: parseFloat(document.getElementById('tripUnloadingCost').value || 0),
+    rto_charges: parseFloat(document.getElementById('tripRtoCost').value || 0),
     status: document.getElementById('tripStatus').value,
     notes: document.getElementById('tripNotes').value.trim()
   };

@@ -55,7 +55,8 @@ router.post('/', [
     vehicle_id, trip_date, source_address, source_city,
     destination_address, destination_city,
     toll_fee_up, toll_fee_down,
-    load_weight, load_unit, distance_km, notes, status, revenue, load_rental
+    load_weight, load_unit, distance_km, notes, status, revenue, load_rental,
+    loading_cost, unloading_cost, rto_charges
   } = req.body;
 
   try {
@@ -75,8 +76,9 @@ router.post('/', [
         vehicle_id, trip_date, source_address, source_city,
         destination_address, destination_city,
         toll_fee_up, toll_fee_down,
-        load_weight, load_unit, distance_km, notes, status, revenue, load_rental
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        load_weight, load_unit, distance_km, notes, status, revenue, load_rental,
+        loading_cost, unloading_cost, rto_charges
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         vehicle_id, trip_date, source_address, source_city || null,
         destination_address, destination_city || null,
@@ -85,7 +87,10 @@ router.post('/', [
         distance_km ? parseFloat(distance_km) : null,
         notes || null, status || 'planned',
         parseFloat(revenue) || 0,
-        parseFloat(load_rental) || 0
+        parseFloat(load_rental) || 0,
+        parseFloat(loading_cost) || 0,
+        parseFloat(unloading_cost) || 0,
+        parseFloat(rto_charges) || 0
       ]
     );
     return res.status(201).json({ message: 'Trip added successfully', id: result.insertId });
@@ -120,7 +125,8 @@ router.put('/:id', async (req, res) => {
     vehicle_id, trip_date, source_address, source_city,
     destination_address, destination_city,
     toll_fee_up, toll_fee_down,
-    load_weight, load_unit, distance_km, notes, status, revenue, load_rental
+    load_weight, load_unit, distance_km, notes, status, revenue, load_rental,
+    loading_cost, unloading_cost, rto_charges
   } = req.body;
 
   try {
@@ -151,6 +157,9 @@ router.put('/:id', async (req, res) => {
         distance_km = ?,
         revenue = COALESCE(?, revenue),
         load_rental = COALESCE(?, load_rental),
+        loading_cost = COALESCE(?, loading_cost),
+        unloading_cost = COALESCE(?, unloading_cost),
+        rto_charges = COALESCE(?, rto_charges),
         notes = ?,
         status = COALESCE(?, status)
       WHERE id = ?`,
@@ -165,6 +174,9 @@ router.put('/:id', async (req, res) => {
         distance_km !== undefined ? (distance_km ? parseFloat(distance_km) : null) : null,
         revenue !== undefined ? parseFloat(revenue) : null,
         load_rental !== undefined ? parseFloat(load_rental) : null,
+        loading_cost !== undefined ? parseFloat(loading_cost) : null,
+        unloading_cost !== undefined ? parseFloat(unloading_cost) : null,
+        rto_charges !== undefined ? parseFloat(rto_charges) : null,
         notes !== undefined ? notes : null,
         status || null, req.params.id
       ]

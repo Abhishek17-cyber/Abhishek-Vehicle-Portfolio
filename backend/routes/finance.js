@@ -57,7 +57,7 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
 
     // 2. Fetch Trips (for revenue, load_rental, and toll costs)
     let tripsQuery = `
-      SELECT id, vehicle_id, trip_date, total_toll, revenue, load_rental 
+      SELECT id, vehicle_id, trip_date, source_city, source_address, destination_city, destination_address, total_toll, revenue, load_rental, loading_cost, unloading_cost, rto_charges 
       FROM trips 
       WHERE vehicle_id IN (${placeholders})
     `;
@@ -76,7 +76,7 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
 
     // 3. Fetch Diesel Records (for fuel costs)
     let dieselQuery = `
-      SELECT id, vehicle_id, refuel_datetime, cost 
+      SELECT id, vehicle_id, trip_id, refuel_datetime, cost 
       FROM diesel_records 
       WHERE vehicle_id IN (${placeholders})
     `;
@@ -136,11 +136,15 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
     const totalRevenue = trips.reduce((sum, t) => sum + parseFloat(t.revenue || 0), 0);
     const totalRental = trips.reduce((sum, t) => sum + parseFloat(t.load_rental || 0), 0);
     const totalToll = trips.reduce((sum, t) => sum + parseFloat(t.total_toll || 0), 0);
+    const totalLoading = trips.reduce((sum, t) => sum + parseFloat(t.loading_cost || 0), 0);
+    const totalUnloading = trips.reduce((sum, t) => sum + parseFloat(t.unloading_cost || 0), 0);
+    const totalRto = trips.reduce((sum, t) => sum + parseFloat(t.rto_charges || 0), 0);
+    const totalOtherCharges = totalLoading + totalUnloading + totalRto;
     const totalDiesel = diesel.reduce((sum, d) => sum + parseFloat(d.cost || 0), 0);
     const totalService = services.reduce((sum, s) => sum + parseFloat(s.cost || 0), 0);
     const totalDriverSalaries = vehicles.reduce((sum, v) => sum + (parseFloat(v.driver_salary || 0) * months), 0);
 
-    const totalExpenses = totalToll + totalDiesel + totalService + totalDriverSalaries;
+    const totalExpenses = totalToll + totalDiesel + totalService + totalDriverSalaries + totalOtherCharges;
     const remainingMoney = totalRental - totalExpenses;
     const profitMargin = totalRental > 0 ? (remainingMoney / totalRental) * 100 : 0;
 
@@ -152,7 +156,7 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
       if (!monthlyMap[month]) monthlyMap[month] = { month, revenue: 0, rental: 0, expenses: 0 };
       monthlyMap[month].revenue += parseFloat(t.revenue || 0);
       monthlyMap[month].rental += parseFloat(t.load_rental || 0);
-      monthlyMap[month].expenses += parseFloat(t.total_toll || 0);
+      monthlyMap[month].expenses += parseFloat(t.total_toll || 0) + parseFloat(t.loading_cost || 0) + parseFloat(t.unloading_cost || 0) + parseFloat(t.rto_charges || 0);
     });
 
     diesel.forEach(d => {
@@ -204,6 +208,10 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
         vehicleMap[t.vehicle_id].revenue += parseFloat(t.revenue || 0);
         vehicleMap[t.vehicle_id].rental += parseFloat(t.load_rental || 0);
         vehicleMap[t.vehicle_id].tolls += parseFloat(t.total_toll || 0);
+        const loading = parseFloat(t.loading_cost || 0);
+        const unloading = parseFloat(t.unloading_cost || 0);
+        const rto = parseFloat(t.rto_charges || 0);
+        vehicleMap[t.vehicle_id].other = (vehicleMap[t.vehicle_id].other || 0) + loading + unloading + rto;
       }
     });
 
@@ -222,7 +230,7 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
     vehicles.forEach(v => {
       if (vehicleMap[v.id]) {
         const vm = vehicleMap[v.id];
-        vm.expenses = vm.diesel + vm.tolls + vm.service;
+        vm.expenses = vm.diesel + vm.tolls + vm.service + vm.salary + (vm.other || 0);
       }
     });
 
@@ -231,8 +239,54 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
       netProfit: v.rental - v.expenses // Remaining Money
     }));
 
+    // Calculate trips per vehicle to distribute shared expenses
+    const tripsPerVehicle = {};
+    trips.forEach(t => {
+      tripsPerVehicle[t.vehicle_id] = (tripsPerVehicle[t.vehicle_id] || 0) + 1;
+    });
+
+    const perLoadTrends = trips.map(t => {
+      const v = vehicles.find(veh => veh.id === t.vehicle_id);
+      const vm = vehicleMap[t.vehicle_id];
+      
+      let apportionedDiesel = 0;
+      let sharedExpensePerTrip = 0;
+      if (vm && tripsPerVehicle[t.vehicle_id]) {
+        apportionedDiesel = vm.diesel / tripsPerVehicle[t.vehicle_id];
+        const shared = vm.diesel + vm.service; // Exclude salary from per-load expense
+        sharedExpensePerTrip = shared / tripsPerVehicle[t.vehicle_id];
+      }
+
+      // Check if there are specific diesel records linked to this trip
+      const tripDieselRecords = diesel.filter(d => d.trip_id === t.id);
+      const tripDieselCost = tripDieselRecords.reduce((sum, d) => sum + parseFloat(d.cost || 0), 0);
+
+      const finalDiesel = tripDieselCost > 0 ? tripDieselCost : apportionedDiesel;
+      const apportionedService = (vm && tripsPerVehicle[t.vehicle_id]) ? (vm.service / tripsPerVehicle[t.vehicle_id]) : 0;
+      const toll = parseFloat(t.total_toll || 0);
+      const otherCharges = parseFloat(t.loading_cost || 0) + parseFloat(t.unloading_cost || 0) + parseFloat(t.rto_charges || 0);
+      const rental = parseFloat(t.load_rental || 0);
+      const expenses = toll + otherCharges + apportionedService + finalDiesel;
+
+      return {
+        id: t.id,
+        date: new Date(t.trip_date).toISOString().slice(0, 10),
+        vehicle: v ? v.vehicle_number : 'Unknown',
+        source: t.source_city || t.source_address || 'Unknown',
+        destination: t.destination_city || t.destination_address || 'Unknown',
+        rental: rental,
+        toll: toll,
+        diesel: finalDiesel,
+        maint: apportionedService,
+        other: otherCharges,
+        expenses: expenses,
+        profit: rental - expenses
+      };
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
     return res.json({
       summary: {
+        totalTrips: trips.length,
         totalRevenue,
         totalRental,
         totalToll,
@@ -247,9 +301,11 @@ router.get('/analytics', requireOwnerOrAdmin, async (req, res) => {
         diesel: totalDiesel,
         tolls: totalToll,
         service: totalService,
-        salaries: totalDriverSalaries
+        salaries: totalDriverSalaries,
+        other: totalOtherCharges
       },
       monthlyTrends,
+      perLoadTrends,
       vehicleProfitability
     });
 

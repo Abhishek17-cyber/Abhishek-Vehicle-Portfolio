@@ -22,7 +22,8 @@ async function loadDashboard() {
   await Promise.all([
     loadStats(),
     loadVehicleGrid(),
-    loadServiceAlertsCheck()
+    loadServiceAlertsCheck(),
+    loadComplianceAlertsCheck()
   ]);
 }
 
@@ -163,8 +164,16 @@ function createVehicleCard(v) {
   const card = document.createElement('div');
   card.className = 'col-md-6 col-xl-4 col-xxl-3';
   
-  const imgHtml = v.photo_url 
-    ? `<img src="${API_BASE_URL}/${v.photo_url}" class="card-img-top object-fit-cover" style="height: 180px;" alt="${v.vehicle_number}">`
+  let mainPhoto = v.photo_url;
+  if (mainPhoto) {
+    try {
+      const photos = JSON.parse(mainPhoto);
+      if (Array.isArray(photos) && photos.length > 0) mainPhoto = photos[0];
+    } catch(e) {} // Not JSON, use as is
+  }
+
+  const imgHtml = mainPhoto 
+    ? `<img src="${API_BASE_URL}/${mainPhoto}" class="card-img-top object-fit-cover" style="height: 180px;" alt="${v.vehicle_number}">`
     : `<div class="bg-light text-muted d-flex align-items-center justify-content-center" style="height: 180px;"><i class="bi bi-truck fs-1 opacity-50"></i></div>`;
 
   const currentUser = getCurrentUser();
@@ -181,7 +190,7 @@ function createVehicleCard(v) {
       <div class="position-absolute top-0 start-0 m-2 badge ${s.cls} shadow-sm">${s.txt}</div>
       <div class="card-body">
         <h5 class="card-title fw-bold mb-1 text-primary">${v.vehicle_number}</h5>
-        <h6 class="card-subtitle mb-3 text-muted">${[v.make, v.model, v.year].filter(Boolean).join(' · ')}</h6>
+        <h6 class="card-subtitle mb-3 text-muted">${[v.make, v.model, v.year, v.vehicle_type].filter(Boolean).join(' · ')}</h6>
         <div class="d-flex flex-wrap gap-2 mb-2">
           ${chips.join('')}
         </div>
@@ -253,6 +262,54 @@ async function loadServiceAlertsCheck() {
 
   } catch(e) {
     console.warn('Service alert check failed:', e.message);
+  }
+}
+
+// ═══════ Compliance Alerts ═══════
+async function loadComplianceAlertsCheck() {
+  const token = getToken();
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/compliance/alerts`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const alerts = await res.json();
+
+    const banner = document.getElementById('complianceAlertBanner');
+    const itemsDiv = document.getElementById('complianceBannerItems');
+
+    if (alerts.length > 0 && banner && itemsDiv) {
+      banner.classList.remove('d-none');
+      banner.classList.add('d-flex');
+
+      const docTypeLabels = {
+        'insurance': 'Insurance',
+        'fitness_cert': 'Fitness Cert (FC)',
+        'permit': 'National Permit',
+        'puc': 'Emission (PUC)',
+        'road_tax': 'Road Tax',
+        'other': 'Other'
+      };
+
+      itemsDiv.innerHTML = alerts.map(c => {
+        const docName = docTypeLabels[c.doc_type] || c.doc_type;
+        const days = c.days_to_expiry;
+        const daysStr = days < 0
+          ? `<span class="text-danger fw-bold">EXPIRED</span>`
+          : `<span class="text-danger fw-bold">${days} day(s) left</span>`;
+          
+        return `
+          <div class="mb-1">
+            <strong>${c.vehicle_number}</strong> &mdash;
+            ${docName} expires on <span class="fw-bold">${new Date(c.expiry_date).toLocaleDateString('en-IN')}</span> &mdash; ${daysStr}
+          </div>`;
+      }).join('');
+    } else if (banner) {
+      banner.classList.add('d-none');
+      banner.classList.remove('d-flex');
+    }
+  } catch(e) {
+    console.warn('Compliance alert check failed:', e.message);
   }
 }
 
@@ -427,6 +484,19 @@ async function handleAddDriver(e) {
       if (vehicleInput) vehicleInput.value = '';
       loadDriversList();
       loadDriverVehicleSuggestions();
+
+      // Automatically hide the form and show the list after success
+      setTimeout(() => {
+        const addCol = document.getElementById('addDriverCol');
+        const listCol = document.getElementById('driversListCol');
+        const btn = document.getElementById('toggleDriverFormBtn');
+        if (addCol && listCol) {
+          addCol.classList.add('d-none');
+          listCol.classList.remove('d-none');
+          if (btn) btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Create Driver Account';
+        }
+        alertBox.classList.add('d-none'); // Hide the success alert for the next time
+      }, 1500);
     } else {
       alertBox.className = 'alert alert-danger py-2';
       alertBox.textContent = data.message || 'Failed to create driver account';

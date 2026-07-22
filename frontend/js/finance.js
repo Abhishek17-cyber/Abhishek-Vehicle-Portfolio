@@ -82,6 +82,7 @@ async function loadFinanceData() {
     updateSummaryCards(financeData.summary);
     renderCharts(financeData);
     renderLedgerTable(financeData.vehicleProfitability);
+    renderPerLoadTable(financeData.perLoadTrends);
 
   } catch (err) {
     console.error('Load finance error:', err);
@@ -115,6 +116,7 @@ async function silentRefreshFinance() {
     updateSummaryCards(financeData.summary);
     renderCharts(financeData);
     renderLedgerTable(financeData.vehicleProfitability);
+    renderPerLoadTable(financeData.perLoadTrends);
   } catch (e) {}
 }
 
@@ -129,22 +131,46 @@ function formatCurrency(val) {
   return '₹' + parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-// Update the top row card stats
 function updateSummaryCards(summary) {
-  document.getElementById('statRevenue').textContent = formatCurrency(summary.totalRental);
-  document.getElementById('statExpenses').textContent = formatCurrency(summary.totalExpenses);
+  const isPerLoad = currentTrendMode === 'perLoad';
+  const mult = (isPerLoad && summary.totalTrips > 0) ? (1 / summary.totalTrips) : 1;
+  const prefix = isPerLoad ? 'Avg/Load: ' : 'Total ';
   
+  const titleRev = document.getElementById('titleRevenue');
+  const titleExp = document.getElementById('titleExpenses');
+  const titleNet = document.getElementById('titleNetProfit');
+  const titleSalary = document.getElementById('titleSalary');
+  
+  if (titleRev) titleRev.textContent = prefix + 'Rental';
+  if (titleExp) titleExp.textContent = prefix + 'Charges';
+  if (titleNet) titleNet.textContent = isPerLoad ? 'Avg/Load: Remaining' : 'Remaining Money';
+  if (titleSalary) titleSalary.textContent = isPerLoad ? 'Monthly Salary (N/A)' : 'Driver Salary';
+  
+  document.getElementById('statRevenue').textContent = formatCurrency(summary.totalRental * mult);
+  
+  // Exclude driver salary from Trip Charges
+  const tripCharges = summary.totalExpenses - summary.totalDriverSalaries;
+  document.getElementById('statExpenses').textContent = formatCurrency(tripCharges * mult);
+
+  // Show Driver salary only on monthly view
+  const salaryDisplay = isPerLoad ? 0 : summary.totalDriverSalaries;
+  const statSalary = document.getElementById('statSalary');
+  if (statSalary) statSalary.textContent = formatCurrency(salaryDisplay);
+  
+  // Calculate remaining money 
+  const remaining = isPerLoad ? ((summary.totalRental - tripCharges) * mult) : summary.remainingMoney;
   const netProfitEl = document.getElementById('statNetProfit');
-  netProfitEl.textContent = formatCurrency(summary.remainingMoney);
+  netProfitEl.textContent = formatCurrency(remaining);
   
   // Format profit card style based on positive/negative gain
-  if (summary.remainingMoney < 0) {
+  if (remaining < 0) {
     netProfitEl.className = 'h3 mb-0 fw-bold text-danger';
   } else {
     netProfitEl.className = 'h3 mb-0 fw-bold text-success';
   }
 
-  document.getElementById('statMargin').textContent = summary.profitMargin.toFixed(1) + '%';
+  const margin = (summary.totalRental > 0) ? (remaining / (summary.totalRental * mult)) * 100 : 0;
+  document.getElementById('statMargin').textContent = margin.toFixed(1) + '%';
 }
 
 // Render or update charts
@@ -153,63 +179,18 @@ function renderCharts(data) {
   const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
   const labelColor = isDarkMode ? '#adb5bd' : '#495057';
 
-  // 1. Render Monthly Trend Chart
-  const trendCtx = document.getElementById('trendChart').getContext('2d');
-  if (trendChartInstance) trendChartInstance.destroy();
-
-  const trendMonths = data.monthlyTrends.map(t => t.month);
-  const trendRentals = data.monthlyTrends.map(t => t.rental);
-  const trendExpenses = data.monthlyTrends.map(t => t.expenses);
-
-  trendChartInstance = new Chart(trendCtx, {
-    type: 'bar',
-    data: {
-      labels: trendMonths.length > 0 ? trendMonths : ['No Data'],
-      datasets: [
-        {
-          label: 'Rental',
-          data: trendRentals.length > 0 ? trendRentals : [0],
-          backgroundColor: '#198754',
-          borderColor: '#198754',
-          borderWidth: 1,
-          borderRadius: 4
-        },
-        {
-          label: 'Charges',
-          data: trendExpenses.length > 0 ? trendExpenses : [0],
-          backgroundColor: '#dc3545',
-          borderColor: '#dc3545',
-          borderWidth: 1,
-          borderRadius: 4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false }, ticks: { color: labelColor } },
-        y: { 
-          grid: { color: gridColor }, 
-          ticks: { 
-            color: labelColor,
-            callback: (v) => '₹' + v.toLocaleString('en-IN')
-          } 
-        }
-      },
-      plugins: {
-        legend: { labels: { color: labelColor } }
-      }
-    }
-  });
+  // 1. Render Monthly/Per Load Trend Chart
+  renderTrendChart();
 
   // 2. Render Expense Breakdown Chart (Pie/Doughnut)
   const breakdownCtx = document.getElementById('breakdownChart').getContext('2d');
   if (breakdownChartInstance) breakdownChartInstance.destroy();
 
   const exp = data.expenseBreakdown;
-  const breakdownLabels = ['Fuel', 'Tolls', 'Maintenance', 'Salaries'];
-  const breakdownValues = [exp.diesel, exp.tolls, exp.service, exp.salaries];
+  const mult = (currentTrendMode === 'perLoad' && data.summary.totalTrips > 0) ? (1 / data.summary.totalTrips) : 1;
+  
+  const breakdownLabels = ['Fuel', 'Tolls', 'Maintenance', 'Salaries', 'Other Charges'];
+  const breakdownValues = [exp.diesel * mult, exp.tolls * mult, exp.service * mult, exp.salaries * mult, (exp.other || 0) * mult];
   const hasExpenseData = breakdownValues.some(v => v > 0);
 
   breakdownChartInstance = new Chart(breakdownCtx, {
@@ -218,7 +199,7 @@ function renderCharts(data) {
       labels: breakdownLabels,
       datasets: [{
         data: hasExpenseData ? breakdownValues : [1],
-        backgroundColor: hasExpenseData ? ['#fd7e14', '#0d6efd', '#ffc107', '#6f42c1'] : ['#e9ecef'],
+        backgroundColor: hasExpenseData ? ['#fd7e14', '#0d6efd', '#ffc107', '#6f42c1', '#20c997'] : ['#e9ecef'],
         borderWidth: isDarkMode ? 2 : 1,
         borderColor: isDarkMode ? '#1e293b' : '#ffffff'
       }]
@@ -254,7 +235,7 @@ function renderCharts(data) {
   // Sort vehicles by net profit
   const sortedVehicles = [...data.vehicleProfitability].sort((a, b) => b.netProfit - a.netProfit);
   const vehicleLabels = sortedVehicles.map(v => v.vehicle_number);
-  const vehicleNetProfits = sortedVehicles.map(v => v.netProfit);
+  const vehicleNetProfits = sortedVehicles.map(v => v.netProfit * mult);
 
   vehicleProfitChartInstance = new Chart(vehicleCtx, {
     type: 'bar',
@@ -282,7 +263,95 @@ function renderCharts(data) {
         y: { grid: { display: false }, ticks: { color: labelColor } }
       },
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => 'Net Profit: ₹' + context.raw.toLocaleString('en-IN')
+          }
+        }
+      }
+    }
+  });
+}
+
+let currentTrendMode = 'monthly';
+
+function toggleTrendChart(mode) {
+  currentTrendMode = mode;
+  const title = document.getElementById('trendChartTitle');
+  if (title) {
+    title.innerHTML = `<i class="bi bi-graph-up me-2 text-primary"></i>Revenue vs Expenses (${mode === 'monthly' ? 'Monthly' : 'Per Load'})`;
+  }
+  
+  if (financeData) {
+    updateSummaryCards(financeData.summary);
+    renderCharts(financeData);
+  }
+}
+
+function renderTrendChart() {
+  if (!financeData) return;
+  const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+  const labelColor = isDarkMode ? '#adb5bd' : '#495057';
+
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  if (trendChartInstance) trendChartInstance.destroy();
+
+  let labels = [];
+  let rentals = [];
+  let expenses = [];
+  let xLabel = '';
+
+  if (currentTrendMode === 'monthly') {
+    labels = financeData.monthlyTrends.map(t => t.month);
+    rentals = financeData.monthlyTrends.map(t => t.rental);
+    expenses = financeData.monthlyTrends.map(t => t.expenses);
+  } else {
+    // Per load mode
+    labels = financeData.perLoadTrends.map(t => `Load #${t.id} (${t.date})`);
+    rentals = financeData.perLoadTrends.map(t => t.rental);
+    expenses = financeData.perLoadTrends.map(t => t.expenses);
+  }
+
+  trendChartInstance = new Chart(trendCtx, {
+    type: 'bar',
+    data: {
+      labels: labels.length > 0 ? labels : ['No Data'],
+      datasets: [
+        {
+          label: 'Rental',
+          data: rentals.length > 0 ? rentals : [0],
+          backgroundColor: '#198754',
+          borderColor: '#198754',
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        {
+          label: 'Charges',
+          data: expenses.length > 0 ? expenses : [0],
+          backgroundColor: '#dc3545',
+          borderColor: '#dc3545',
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { color: labelColor } },
+        y: { 
+          grid: { color: gridColor }, 
+          ticks: { 
+            color: labelColor,
+            callback: (v) => '₹' + v.toLocaleString('en-IN')
+          } 
+        }
+      },
+      plugins: {
+        legend: { labels: { color: labelColor } }
       }
     }
   });
@@ -349,4 +418,40 @@ function exportLedger() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// Populate the per-load details table
+function renderPerLoadTable(perLoadTrends) {
+  const tbody = document.getElementById('perLoadTableBody');
+  if (!tbody) return;
+
+  if (!perLoadTrends || perLoadTrends.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No per-load records found for selected filters.</td></tr>';
+    return;
+  }
+
+  // Sort by date descending
+  const sortedTrends = [...perLoadTrends].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  tbody.innerHTML = sortedTrends.map(t => {
+    const profitClass = t.profit >= 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
+    const profitSign = t.profit >= 0 ? '+' : '-';
+    const otherExp = parseFloat(t.other || 0);
+    const maintExp = parseFloat(t.maint || 0);
+
+    return `
+      <tr>
+        <td>${t.date}</td>
+        <td><strong>${t.vehicle}</strong></td>
+        <td>${t.source}</td>
+        <td>${t.destination}</td>
+        <td class="text-end text-success">${formatCurrency(t.rental)}</td>
+        <td class="text-end text-danger">${formatCurrency(t.diesel)}</td>
+        <td class="text-end text-danger">${formatCurrency(t.toll)}</td>
+        <td class="text-end text-danger">${formatCurrency(maintExp)}</td>
+        <td class="text-end text-danger">${formatCurrency(otherExp)}</td>
+        <td class="text-end ${profitClass}">${profitSign}${formatCurrency(Math.abs(t.profit))}</td>
+      </tr>
+    `;
+  }).join('');
 }

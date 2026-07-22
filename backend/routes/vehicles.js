@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
     const isDriver = req.user.role === 'driver';
     const [rows] = await db.execute(
       `SELECT id, vehicle_number, make, model, year, purchase_date,
-              length, length_unit, weight, weight_unit, photo_url,
+              length, length_unit, weight, weight_unit, vehicle_type, photo_url,
               owner_name, owner_phone, driver_name, driver_phone,
               next_service_date, status, created_at, driver_user_id
        FROM vehicles
@@ -75,7 +75,7 @@ router.post('/', [
 
   const {
     vehicle_number, make, model, year, purchase_date,
-    length, length_unit, weight, weight_unit, photo_url,
+    length, length_unit, weight, weight_unit, vehicle_type, photo_url,
     owner_name, owner_phone, owner_address,
     driver_name, driver_phone, driver_salary,
     description, next_service_date, service_reminder_days, status
@@ -85,16 +85,17 @@ router.post('/', [
     const [result] = await db.execute(
       `INSERT INTO vehicles (
         vehicle_number, make, model, year, purchase_date,
-        length, length_unit, weight, weight_unit, photo_url,
+        length, length_unit, weight, weight_unit, vehicle_type, photo_url,
         owner_name, owner_phone, owner_address,
         driver_name, driver_phone, driver_salary,
         description, next_service_date, service_reminder_days, status, owner_id, driver_user_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         vehicle_number, make, model,
         year || null, purchase_date || null,
         length || null, length_unit || 'meters',
         weight || null, weight_unit || 'tons',
+        vehicle_type || null,
         photo_url || null,
         owner_name, owner_phone, owner_address || null,
         driver_name || null, driver_phone || null, driver_salary || null,
@@ -143,7 +144,7 @@ router.put('/:id', async (req, res) => {
 
   const {
     vehicle_number, make, model, year, purchase_date,
-    length, length_unit, weight, weight_unit, photo_url,
+    length, length_unit, weight, weight_unit, vehicle_type, photo_url,
     owner_name, owner_phone, owner_address,
     driver_name, driver_phone, driver_salary,
     description, next_service_date, service_reminder_days, status
@@ -167,6 +168,7 @@ router.put('/:id', async (req, res) => {
         length_unit = COALESCE(?, length_unit),
         weight = ?,
         weight_unit = COALESCE(?, weight_unit),
+        vehicle_type = COALESCE(?, vehicle_type),
         photo_url = COALESCE(?, photo_url),
         owner_name = COALESCE(?, owner_name),
         owner_phone = COALESCE(?, owner_phone),
@@ -185,6 +187,7 @@ router.put('/:id', async (req, res) => {
         year || null, purchase_date || null,
         length || null, length_unit || null,
         weight || null, weight_unit || null,
+        vehicle_type || null,
         photo_url || null,
         owner_name || null, owner_phone || null,
         owner_address !== undefined ? owner_address : null,

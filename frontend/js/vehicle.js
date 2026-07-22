@@ -6,6 +6,8 @@
 // ====================================================
 // ADD VEHICLE PAGE (add-vehicle.html)
 // ====================================================
+let selectedVehiclePhotos = [];
+
 if (document.getElementById('addVehicleForm')) {
   document.addEventListener('DOMContentLoaded', initAddVehiclePage);
 }
@@ -34,34 +36,149 @@ function initAddVehiclePage() {
     dropZone.addEventListener('drop', e => {
       e.preventDefault();
       dropZone.style.borderColor = '';
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) {
-        showPhotoPreview(file);
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleFiles(files);
       }
     });
   }
-}
 
-function previewPhoto(input) {
-  if (input.files && input.files[0]) {
-    showPhotoPreview(input.files[0]);
+  // OCR Auto-Fill listener
+  const ocrInput = document.getElementById('ocrDocument');
+  if (ocrInput) {
+    ocrInput.addEventListener('change', handleOCRUpload);
   }
 }
 
-function showPhotoPreview(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('previewImg').src = e.target.result;
-    document.getElementById('photoPreview').style.display = 'block';
-    document.getElementById('photoDropZone').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+// ===== OCR AUTO-FILL LOGIC =====
+async function handleOCRUpload(e) {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const loadingDiv = document.getElementById('ocrLoading');
+  loadingDiv.classList.remove('d-none');
+
+  try {
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('documents', files[i]);
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/ocr/extract-vehicle`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: formData
+    });
+
+    if (!res.ok) throw new Error('Failed to extract data');
+    const data = await res.json();
+    const ext = data.extracted;
+
+    // Fill form fields
+    if (ext.vehicleNumber) {
+      const el = document.getElementById('vehicleNumber');
+      el.value = ext.vehicleNumber;
+      el.classList.add('is-valid');
+    }
+    if (ext.make) {
+      const el = document.getElementById('make');
+      el.value = ext.make;
+      el.classList.add('is-valid');
+    }
+    if (ext.issueDate) {
+      const el = document.getElementById('purchaseDate');
+      el.value = ext.issueDate;
+      el.classList.add('is-valid');
+    }
+
+  } catch (err) {
+    console.error('OCR Error:', err);
+    alert('Could not extract data from document. Please fill manually.');
+  } finally {
+    loadingDiv.classList.add('d-none');
+    e.target.value = ''; // reset input
+  }
+}
+
+function handlePhotoSelect(input) {
+  if (input.files && input.files.length > 0) {
+    handleFiles(input.files);
+  }
+}
+
+function handleFiles(files) {
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].type.startsWith('image/')) {
+      // Prevent adding more than 10 images
+      if (selectedVehiclePhotos.length >= 10) {
+        alert("You can only upload a maximum of 10 photos.");
+        break;
+      }
+      selectedVehiclePhotos.push(files[i]);
+    }
+  }
+  renderPhotoPreviews();
+}
+
+function renderPhotoPreviews() {
+  const container = document.getElementById('photoPreviewContainer');
+  const dropZone = document.getElementById('photoDropZone');
+  
+  if (!container || !dropZone) return;
+
+  if (selectedVehiclePhotos.length === 0) {
+    container.classList.add('d-none');
+    container.classList.remove('d-flex');
+    dropZone.style.display = 'block';
+    return;
+  }
+
+  dropZone.style.display = 'none';
+  container.classList.remove('d-none');
+  container.classList.add('d-flex');
+  container.innerHTML = '';
+
+  selectedVehiclePhotos.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'position-relative';
+      div.style.width = '100px';
+      div.style.height = '100px';
+      
+      div.innerHTML = `
+        <img src="${e.target.result}" class="img-fluid rounded border" style="width:100%; height:100%; object-fit: cover;">
+        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-0" style="width: 20px; height: 20px; line-height: 1;" onclick="removePhoto(${index})">
+          <i class="bi bi-x" style="font-size: 12px;"></i>
+        </button>
+      `;
+      container.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  // Add a plus button to add more images
+  if (selectedVehiclePhotos.length < 10) {
+    const addMoreBtn = document.createElement('div');
+    addMoreBtn.className = 'border border-dashed rounded bg-light d-flex align-items-center justify-content-center cursor-pointer';
+    addMoreBtn.style.width = '100px';
+    addMoreBtn.style.height = '100px';
+    addMoreBtn.style.cursor = 'pointer';
+    addMoreBtn.onclick = () => document.getElementById('vehiclePhotoInput').click();
+    addMoreBtn.innerHTML = '<i class="bi bi-plus-lg text-muted fs-3"></i>';
+    container.appendChild(addMoreBtn);
+  }
+}
+
+function removePhoto(index) {
+  selectedVehiclePhotos.splice(index, 1);
+  renderPhotoPreviews();
 }
 
 function clearPhoto() {
+  selectedVehiclePhotos = [];
   document.getElementById('vehiclePhotoInput').value = '';
-  document.getElementById('photoPreview').style.display = 'none';
-  document.getElementById('photoDropZone').style.display = 'block';
+  renderPhotoPreviews();
 }
 
 async function handleAddVehicle(e) {
@@ -88,22 +205,31 @@ async function handleAddVehicle(e) {
   submitBtn.disabled = true;
 
   try {
-    // First, upload photo if provided
+    // Upload photos if provided
     let photoUrl = null;
-    const photoFile = document.getElementById('vehiclePhotoInput').files[0];
-    if (photoFile) {
-      const formData = new FormData();
-      formData.append('doc_type', 'other');
-      formData.append('file', photoFile);
+    if (selectedVehiclePhotos.length > 0) {
+      const uploadedUrls = [];
+      for (let i = 0; i < selectedVehiclePhotos.length; i++) {
+        const formData = new FormData();
+        formData.append('doc_type', 'other');
+        formData.append('file', selectedVehiclePhotos[i]);
 
-      const uploadRes = await fetch(`${API_BASE_URL}/api/uploads/photo`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-        body: formData
-      });
-      if (uploadRes.ok) {
-        const uploadData = await uploadRes.json();
-        photoUrl = uploadData.file_url;
+        try {
+          const uploadRes = await fetch(`${API_BASE_URL}/api/uploads/photo`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+            body: formData
+          });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            uploadedUrls.push(uploadData.file_url);
+          }
+        } catch(e) {
+          console.error("Failed to upload image", e);
+        }
+      }
+      if (uploadedUrls.length > 0) {
+        photoUrl = JSON.stringify(uploadedUrls);
       }
     }
 
@@ -118,6 +244,7 @@ async function handleAddVehicle(e) {
       length_unit: document.getElementById('lengthUnit').value,
       weight: document.getElementById('weight').value || null,
       weight_unit: document.getElementById('weightUnit').value,
+      vehicle_type: document.getElementById('vehicleType') ? document.getElementById('vehicleType').value || null : null,
       photo_url: photoUrl,
       owner_name: ownerName,
       owner_phone: ownerPhone,
@@ -222,12 +349,44 @@ function renderVehicleDetail(v) {
 
   // Header info
   document.getElementById('detailNumber').textContent = v.vehicle_number;
-  document.getElementById('detailModel').textContent = [v.make, v.model, v.year].filter(Boolean).join(' • ');
+  document.getElementById('detailModel').textContent = [v.make, v.model, v.year, v.vehicle_type].filter(Boolean).join(' • ');
 
   // Image
   const imgContainer = document.getElementById('detailImageContainer');
   if (v.photo_url) {
-    imgContainer.innerHTML = `<img src="${API_BASE_URL}/${v.photo_url}" alt="${v.vehicle_number}" style="width:100%; height:100%; object-fit:cover;">`;
+    let photos = [];
+    try {
+      photos = JSON.parse(v.photo_url);
+    } catch(e) {
+      photos = [v.photo_url]; // Fallback for old single string URLs
+    }
+    
+    if (Array.isArray(photos) && photos.length > 1) {
+      let carouselItems = photos.map((url, i) => `
+        <div class="carousel-item ${i === 0 ? 'active' : ''} h-100 w-100">
+          <img src="${API_BASE_URL}/${url}" class="d-block w-100 h-100" style="object-fit:cover;" alt="${v.vehicle_number} - Photo ${i+1}">
+        </div>
+      `).join('');
+      
+      imgContainer.innerHTML = `
+        <div id="vehiclePhotoCarousel" class="carousel slide h-100 w-100" data-bs-ride="carousel">
+          <div class="carousel-inner h-100 w-100">
+            ${carouselItems}
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#vehiclePhotoCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#vehiclePhotoCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
+        </div>
+      `;
+    } else {
+      const url = Array.isArray(photos) ? photos[0] : v.photo_url;
+      imgContainer.innerHTML = `<img src="${API_BASE_URL}/${url}" alt="${v.vehicle_number}" style="width:100%; height:100%; object-fit:cover;">`;
+    }
   }
 
   // Status badge
@@ -431,6 +590,15 @@ function toggleEdit() {
       <div class="form-group"><label>Make</label><input type="text" id="editMake" class="form-control" value="${v.make || ''}"></div>
       <div class="form-group"><label>Model</label><input type="text" id="editModel" class="form-control" value="${v.model || ''}"></div>
       <div class="form-group"><label>Year</label><input type="number" id="editYear" class="form-control" value="${v.year || ''}"></div>
+      <div class="form-group"><label>Vehicle Type</label>
+        <select id="editVehicleType" class="form-control">
+          <option value="" ${!v.vehicle_type ? 'selected' : ''}>Select Type</option>
+          <option value="Container" ${v.vehicle_type === 'Container' ? 'selected' : ''}>Container</option>
+          <option value="Body" ${v.vehicle_type === 'Body' ? 'selected' : ''}>Body</option>
+          <option value="Trailor" ${v.vehicle_type === 'Trailor' ? 'selected' : ''}>Trailor</option>
+          <option value="Tipper" ${v.vehicle_type === 'Tipper' ? 'selected' : ''}>Tipper</option>
+        </select>
+      </div>
       <div class="form-group"><label>Owner Name</label><input type="text" id="editOwnerName" class="form-control" value="${v.owner_name || ''}"></div>
       <div class="form-group"><label>Owner Phone</label><input type="text" id="editOwnerPhone" class="form-control" value="${v.owner_phone || ''}"></div>
       <div class="form-group"><label>Driver Name</label><input type="text" id="editDriverName" class="form-control" value="${v.driver_name || ''}"></div>
@@ -469,6 +637,7 @@ async function saveVehicle() {
     make: document.getElementById('editMake').value.trim(),
     model: document.getElementById('editModel').value.trim(),
     year: document.getElementById('editYear').value || null,
+    vehicle_type: document.getElementById('editVehicleType').value || null,
     owner_name: document.getElementById('editOwnerName').value.trim(),
     owner_phone: document.getElementById('editOwnerPhone').value.trim(),
     owner_address: document.getElementById('editOwnerAddress').value.trim(),

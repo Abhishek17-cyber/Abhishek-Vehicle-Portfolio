@@ -79,6 +79,7 @@
         <a href="#" class="nav-link active" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
 
         <div class="sidebar-heading mt-4">Documents</div>
+        <a href="compliance.html" class="nav-link"><i class="bi bi-shield-check me-2"></i>Compliance</a>
         <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
       </div>
       <div class="mt-auto px-2 pb-3">
@@ -149,36 +150,59 @@
 
         <div id="financeAlert"></div>
 
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills mb-4" id="financeTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold px-4" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true"><i class="bi bi-pie-chart me-2"></i>Overview</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold px-4" id="per-load-tab" data-bs-toggle="tab" data-bs-target="#per-load" type="button" role="tab" aria-controls="per-load" aria-selected="false"><i class="bi bi-list-columns-reverse me-2"></i>Per-Load Details</button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="financeTabContent">
+          <!-- Overview Tab Pane -->
+          <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+
         <!-- Summary Stats Grid -->
-        <div class="row g-3 mb-4" id="statsGrid">
-          <div class="col-sm-6 col-xl-3">
+        <div class="row g-3 mb-4 flex-nowrap overflow-auto" id="statsGrid">
+          <div class="col" style="min-width: 200px;">
             <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-success">
               <div class="card-body">
-                <div class="text-xs fw-bold text-success text-uppercase mb-1 small">Total Rental</div>
+                <div class="text-xs fw-bold text-success text-uppercase mb-1 small" id="titleRevenue">Total Rental</div>
                 <div class="h3 mb-0 fw-bold text-dark" id="statRevenue">₹0</div>
               </div>
             </div>
           </div>
           
-          <div class="col-sm-6 col-xl-3">
+          <div class="col" style="min-width: 200px;">
             <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-danger">
               <div class="card-body">
-                <div class="text-xs fw-bold text-danger text-uppercase mb-1 small">Total Charges</div>
+                <div class="text-xs fw-bold text-danger text-uppercase mb-1 small" id="titleExpenses">Total Charges</div>
                 <div class="h3 mb-0 fw-bold text-dark" id="statExpenses">₹0</div>
               </div>
             </div>
           </div>
+
+          <div class="col" style="min-width: 200px;">
+            <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-warning">
+              <div class="card-body">
+                <div class="text-xs fw-bold text-warning text-uppercase mb-1 small" id="titleSalary">Driver Salary</div>
+                <div class="h3 mb-0 fw-bold text-dark" id="statSalary">₹0</div>
+              </div>
+            </div>
+          </div>
           
-          <div class="col-sm-6 col-xl-3">
+          <div class="col" style="min-width: 200px;">
             <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-primary">
               <div class="card-body">
-                <div class="text-xs fw-bold text-primary text-uppercase mb-1 small">Remaining Money</div>
+                <div class="text-xs fw-bold text-primary text-uppercase mb-1 small" id="titleNetProfit">Remaining Money</div>
                 <div class="h3 mb-0 fw-bold text-dark" id="statNetProfit">₹0</div>
               </div>
             </div>
           </div>
 
-          <div class="col-sm-6 col-xl-3">
+          <div class="col" style="min-width: 200px;">
             <div class="card glass-panel fade-in-up h-100 py-2 border-start border-4 border-info">
               <div class="card-body">
                 <div class="text-xs fw-bold text-info text-uppercase mb-1 small">Profit Margin</div>
@@ -193,8 +217,14 @@
           <!-- Monthly trends -->
           <div class="col-lg-8">
             <div class="card glass-panel fade-in-up h-100">
-              <div class="card-header bg-transparent py-3">
-                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-graph-up me-2 text-primary"></i>Monthly Revenue vs Expenses</h5>
+              <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark" id="trendChartTitle"><i class="bi bi-graph-up me-2 text-primary"></i>Revenue vs Expenses (Monthly)</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                  <input type="radio" class="btn-check" name="trendToggle" id="toggleMonthly" autocomplete="off" checked onchange="toggleTrendChart('monthly')">
+                  <label class="btn btn-outline-primary fw-semibold" for="toggleMonthly">Monthly</label>
+                  <input type="radio" class="btn-check" name="trendToggle" id="togglePerLoad" autocomplete="off" onchange="toggleTrendChart('perLoad')">
+                  <label class="btn btn-outline-primary fw-semibold" for="togglePerLoad">Per Load</label>
+                </div>
               </div>
               <div class="card-body">
                 <div class="chart-container">
@@ -263,6 +293,43 @@
             </table>
           </div>
         </div>
+
+          </div> <!-- End Overview Tab -->
+
+          <!-- Per-Load Tab Pane -->
+          <div class="tab-pane fade" id="per-load" role="tabpanel" aria-labelledby="per-load-tab">
+            <div class="card glass-panel fade-in-up mb-4">
+              <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Per-Load Expense Details</h5>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-nowrap">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Vehicle</th>
+                      <th>Source</th>
+                      <th>Destination</th>
+                      <th class="text-end text-success">Rental (₹)</th>
+                      <th class="text-end text-danger">Diesel Exp. (₹)</th>
+                      <th class="text-end text-danger">Toll Exp. (₹)</th>
+                      <th class="text-end text-danger">Maint. (₹)</th>
+                      <th class="text-end text-danger">Other Exp. (₹)</th>
+                      <th class="text-end fw-bold">Profit (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="perLoadTableBody">
+                    <tr>
+                      <td colspan="10" class="text-center py-5">
+                        <div class="text-muted">Select a vehicle and click Per-Load Details to view data.</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- End Per-Load Tab -->
+        </div> <!-- End Tab Content -->
 
       </div>
     </div>

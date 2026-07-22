@@ -54,6 +54,7 @@
         <a href="finance.html" class="nav-link" id="nav-finance"><i class="bi bi-cash-coin me-2"></i>Finance</a>
         
         <div class="sidebar-heading mt-4">Documents</div>
+        <a href="compliance.html" class="nav-link"><i class="bi bi-shield-check me-2"></i>Compliance</a>
         <a href="uploads.html" class="nav-link"><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Bills</a>
       </div>
       <div class="mt-auto px-2 pb-3">
@@ -107,6 +108,32 @@
           
           <div class="row g-4">
             <div class="col-xl-8">
+              
+              <!-- Magic Auto-Fill -->
+              <div class="card bg-primary bg-opacity-10 border-primary border-opacity-25 mb-4 fade-in-up" style="border-radius: 12px; border: 1px dashed var(--bs-primary);">
+                <div class="card-body p-4 d-flex align-items-center flex-wrap gap-4">
+                  <div class="flex-grow-1">
+                    <h5 class="fw-bold text-primary mb-1"><i class="bi bi-magic me-2"></i>Magic Auto-Fill</h5>
+                    <p class="text-secondary small mb-0">Upload scans of the vehicle's RC Book, Insurance, or FC. Select as many as you need, then click Extract.</p>
+                    <div id="ocrFileList" class="mt-2 text-primary small fw-bold"></div>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <input type="file" id="ocrDocument" class="d-none" accept=".jpg,.jpeg,.png" multiple>
+                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('ocrDocument').click()">
+                      <i class="bi bi-plus-circle me-1"></i> Add Scans
+                    </button>
+                    <button type="button" id="ocrProcessBtn" class="btn btn-primary d-none" onclick="processOCR()">
+                      <i class="bi bi-magic me-1"></i> Extract Details
+                    </button>
+                  </div>
+                </div>
+                <!-- Loading State -->
+                <div id="ocrLoading" class="card-footer bg-transparent border-0 py-3 text-center d-none">
+                  <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                  <span class="text-primary fw-semibold small">Analyzing document with AI...</span>
+                </div>
+              </div>
+
               <!-- Vehicle Information -->
               <div class="card glass-panel fade-in-up mb-4">
                 <div class="card-header bg-transparent py-3 border-bottom-0">
@@ -133,6 +160,16 @@
                     <div class="col-md-6">
                       <label for="purchaseDate" class="form-label text-secondary fw-semibold small">Purchase Date</label>
                       <input type="date" id="purchaseDate" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="vehicleType" class="form-label text-secondary fw-semibold small">Vehicle Type</label>
+                      <select id="vehicleType" class="form-select">
+                        <option value="">Select Type</option>
+                        <option value="Container">Container</option>
+                        <option value="Body">Body</option>
+                        <option value="Trailor">Trailor</option>
+                        <option value="Tipper">Tipper</option>
+                      </select>
                     </div>
                     <div class="col-md-6">
                       <label for="status" class="form-label text-secondary fw-semibold small">Vehicle Status</label>
@@ -210,17 +247,14 @@
                 </div>
                 <div class="card-body text-center pb-4">
                   <div class="p-4 border border-dashed rounded bg-light cursor-pointer" id="photoDropZone" onclick="document.getElementById('vehiclePhotoInput').click()" style="cursor: pointer; border-style: dashed !important;">
-                    <i class="bi bi-cloud-arrow-up display-4 text-muted mb-2"></i>
-                    <p class="mb-1 text-muted">Click to upload photo</p>
-                    <small class="text-muted">JPG, PNG (Max 5MB)</small>
+                    <i class="bi bi-images display-4 text-muted mb-2"></i>
+                    <p class="mb-1 text-muted">Click to upload photos</p>
+                    <small class="text-muted">JPG, PNG (Max 5MB each)</small>
                   </div>
-                  <input type="file" id="vehiclePhotoInput" accept="image/*" class="d-none" onchange="previewPhoto(this)">
+                  <input type="file" id="vehiclePhotoInput" accept="image/*" class="d-none" multiple onchange="handlePhotoSelect(this)">
                   
-                  <div id="photoPreview" class="mt-3 d-none">
-                    <img id="previewImg" src="" alt="Preview" class="img-fluid rounded border mb-2" style="max-height:180px; object-fit: cover;">
-                    <div>
-                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearPhoto()"><i class="bi bi-trash me-1"></i>Remove</button>
-                    </div>
+                  <div id="photoPreviewContainer" class="mt-3 d-flex flex-wrap gap-2 justify-content-center d-none">
+                    <!-- thumbnails will be generated dynamically -->
                   </div>
                 </div>
               </div>
