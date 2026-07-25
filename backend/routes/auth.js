@@ -22,7 +22,7 @@ router.post('/login', [
     return res.status(400).json({ message: errors.array()[0].msg });
   }
 
-  const { username, password } = req.body;
+  const { username, password, role } = req.body;
 
   try {
     const [rows] = await db.execute(
@@ -39,6 +39,19 @@ router.post('/login', [
 
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    if (role) {
+      let expectedRole = role === 'jobseeker' ? 'driver' : role;
+      if (user.role !== expectedRole) {
+        return res.status(401).json({ message: `Account is registered as ${user.role}. Please login from the correct tab.` });
+      }
+      if (role === 'jobseeker' && user.owner_id) {
+        return res.status(401).json({ message: 'You are already hired by an owner. Please login from the Driver tab.' });
+      }
+      if (role === 'driver' && !user.owner_id) {
+        return res.status(401).json({ message: 'You are not assigned to an owner yet. Please login from the Hire Jobs tab.' });
+      }
     }
 
     const token = jwt.sign(

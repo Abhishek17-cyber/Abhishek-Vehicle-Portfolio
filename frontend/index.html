@@ -308,11 +308,16 @@
       btnText.textContent = isRegister ? 'Registering...' : 'Authenticating...';
 
       try {
+        const payload = { username: u, password: p };
+        if (!isRegister) {
+          payload.role = currentRole;
+        }
+
         const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p })
+          body: JSON.stringify(payload)
         });
         
         const data = await res.json();
