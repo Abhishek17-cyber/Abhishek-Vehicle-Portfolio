@@ -5,7 +5,7 @@
  */
 
 // ── CHANGE THIS to your EC2 Public IP ──
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://13.207.68.177:3000';
 
 // Examples:
 //   const API_BASE_URL = 'http://13.233.45.67:3000';       // EC2 IP
