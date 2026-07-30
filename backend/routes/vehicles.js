@@ -152,9 +152,28 @@ router.put('/:id', async (req, res) => {
 
   try {
     // Verify ownership or admin role
-    const [existing] = await db.execute('SELECT id FROM vehicles WHERE id = ? AND (owner_id = ? OR ? = "admin")', [req.params.id, req.user.id, req.user.role]);
+    const [existing] = await db.execute(
+      'SELECT id, owner_id FROM vehicles WHERE id = ? AND (owner_id = ? OR owner_id IS NULL OR ? = "admin")',
+      [req.params.id, req.user.id, req.user.role]
+    );
     if (!existing.length) {
       return res.status(404).json({ message: 'Vehicle not found or unauthorized' });
+    }
+
+    // Data sanitization
+    const driverUserId = (req.body.driver_user_id && !isNaN(req.body.driver_user_id))
+      ? parseInt(req.body.driver_user_id)
+      : null;
+
+    const validYear = (year && !isNaN(year)) ? parseInt(year) : null;
+    const validSalary = (driver_salary && !isNaN(driver_salary)) ? parseFloat(driver_salary) : null;
+
+    let cleanNextServiceDate = null;
+    if (next_service_date) {
+      const d = new Date(next_service_date);
+      if (!isNaN(d.getTime())) {
+        cleanNextServiceDate = d.toISOString().split('T')[0];
+      }
     }
 
     const [result] = await db.execute(
@@ -181,37 +200,43 @@ router.put('/:id', async (req, res) => {
         service_reminder_days = COALESCE(?, service_reminder_days),
         status = COALESCE(?, status),
         driver_user_id = ?
-      WHERE id = ? AND (owner_id = ? OR ? = "admin")`,
+      WHERE id = ? AND (owner_id = ? OR owner_id IS NULL OR ? = "admin")`,
       [
-        vehicle_number || null, make || null, model || null,
-        year || null, purchase_date || null,
-        length || null, length_unit || null,
-        weight || null, weight_unit || null,
+        vehicle_number || null,
+        make || null,
+        model || null,
+        validYear,
+        purchase_date || null,
+        length || null,
+        length_unit || null,
+        weight || null,
+        weight_unit || null,
         vehicle_type || null,
         photo_url || null,
-        owner_name || null, owner_phone || null,
+        owner_name || null,
+        owner_phone || null,
         owner_address !== undefined ? owner_address : null,
         driver_name !== undefined ? driver_name : null,
         driver_phone !== undefined ? driver_phone : null,
-        driver_salary !== undefined ? driver_salary : null,
+        validSalary,
         description !== undefined ? description : null,
-        next_service_date !== undefined ? next_service_date || null : null,
+        cleanNextServiceDate,
         service_reminder_days || null,
         status || null,
-        req.body.driver_user_id || null,
+        driverUserId,
         req.params.id,
         req.user.id,
         req.user.role
       ]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found' });
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found or no changes made' });
     return res.json({ message: 'Vehicle updated successfully' });
   } catch(err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Vehicle number already exists' });
     }
     console.error('Update vehicle error:', err);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Update failed: ' + (err.sqlMessage || err.message) });
   }
 });
 
