@@ -103,12 +103,49 @@ async function checkServiceAlerts() {
           📞 <a href="tel:${v.owner_phone}" style="color:var(--accent-blue);">${v.owner_phone || 'N/A'}</a> |
           Driver: <strong>${v.driver_name || 'N/A'}</strong>
           📞 <a href="tel:${v.driver_phone}" style="color:var(--accent-blue);">${v.driver_phone || 'N/A'}</a>
+          <button onclick="sendSmsReminder(${v.id})" style="margin-left:12px; font-size:12px; padding:4px 10px; background:linear-gradient(135deg, #FF9900, #FF6600); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">📲 Send AWS SMS</button>
         `;
         itemsContainer.appendChild(item);
       });
     }
   } catch(e) {
     console.warn('Service alert check failed:', e);
+  }
+}
+
+// ===== Send AWS SNS SMS Reminder =====
+async function sendSmsReminder(vehicleId) {
+  const token = getToken();
+  const activeBtn = event ? event.target : null;
+  if (activeBtn) {
+    activeBtn.disabled = true;
+    activeBtn.textContent = 'Sending...';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/service/send-sms-reminder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(vehicleId ? { vehicle_id: vehicleId } : {})
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`✅ AWS SNS SMS Dispatch Completed!\n\n${data.message}\nSent: ${data.sentCount}, Failed: ${data.failedCount}`);
+    } else {
+      alert(`⚠️ SMS Dispatch Notice: ${data.message || data.error}\n(Ensure AWS credentials or EC2 IAM Role with sns:Publish are configured)`);
+    }
+  } catch(err) {
+    console.error('Error triggering SMS reminder:', err);
+    alert('❌ Failed to connect to SMS service backend. Check network or server status.');
+  } finally {
+    if (activeBtn) {
+      activeBtn.disabled = false;
+      activeBtn.textContent = '📲 Send AWS SMS';
+    }
   }
 }
 

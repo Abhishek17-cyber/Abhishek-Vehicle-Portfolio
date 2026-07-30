@@ -7,6 +7,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { verifyToken } = require('../middleware/auth');
+const { sendDirectSMS } = require('../utils/snsService');
 
 router.use(verifyToken);
 
@@ -32,6 +33,98 @@ router.get('/alerts', async (req, res) => {
   } catch(err) {
     console.error('Service alerts error:', err);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// ===== POST /api/service/send-sms-reminder =====
+router.post('/send-sms-reminder', async (req, res) => {
+  try {
+    const { vehicle_id } = req.body;
+    const days = req.query.days ? parseInt(req.query.days) : 7;
+    const isDriver = req.user.role === 'driver';
+
+    let query = `
+      SELECT v.id, v.vehicle_number, v.make, v.model,
+             v.owner_name, v.owner_phone,
+             v.driver_name, v.driver_phone,
+             v.next_service_date,
+             DATEDIFF(v.next_service_date, CURDATE()) AS days_until_service
+      FROM vehicles v
+      WHERE v.next_service_date IS NOT NULL
+    `;
+    const params = [];
+
+    if (vehicle_id) {
+      query += ` AND v.id = ?`;
+      params.push(vehicle_id);
+    } else {
+      query += ` AND DATEDIFF(v.next_service_date, CURDATE()) <= ?`;
+      params.push(days);
+    }
+
+    if (req.user.role !== 'admin') {
+      query += ` AND ${isDriver ? 'v.driver_user_id = ?' : 'v.owner_id = ?'}`;
+      params.push(req.user.id);
+    }
+
+    const [vehicles] = await db.execute(query, params);
+
+    if (!vehicles.length) {
+      return res.status(404).json({ message: 'No vehicles found with upcoming service due.' });
+    }
+
+    const results = [];
+
+    for (const v of vehicles) {
+      const formattedDate = v.next_service_date
+        ? new Date(v.next_service_date).toLocaleDateString('en-IN', {
+            year: 'numeric', month: 'short', day: 'numeric'
+          })
+        : 'Soon';
+
+      // 1. Send SMS to Owner
+      if (v.owner_phone) {
+        const ownerMsg = `Fleet Alert: Dear ${v.owner_name || 'Owner'}, your vehicle ${v.vehicle_number} service is due on ${formattedDate}. Please schedule service.`;
+        const ownerResult = await sendDirectSMS(v.owner_phone, ownerMsg);
+        results.push({
+          vehicle_number: v.vehicle_number,
+          role: 'owner',
+          name: v.owner_name,
+          phone: v.owner_phone,
+          status: ownerResult.success ? 'Sent' : 'Failed',
+          error: ownerResult.error,
+          messageId: ownerResult.messageId
+        });
+      }
+
+      // 2. Send SMS to Driver
+      if (v.driver_phone) {
+        const driverMsg = `Fleet Alert: Hi ${v.driver_name || 'Driver'}, vehicle ${v.vehicle_number} assigned to you is due for service on ${formattedDate}. Please inform fleet manager.`;
+        const driverResult = await sendDirectSMS(v.driver_phone, driverMsg);
+        results.push({
+          vehicle_number: v.vehicle_number,
+          role: 'driver',
+          name: v.driver_name,
+          phone: v.driver_phone,
+          status: driverResult.success ? 'Sent' : 'Failed',
+          error: driverResult.error,
+          messageId: driverResult.messageId
+        });
+      }
+    }
+
+    const sentCount = results.filter(r => r.status === 'Sent').length;
+    const failedCount = results.filter(r => r.status === 'Failed').length;
+
+    return res.json({
+      message: `SMS reminder process completed. Sent: ${sentCount}, Failed: ${failedCount}`,
+      sentCount,
+      failedCount,
+      details: results
+    });
+  } catch (err) {
+    console.error('Send SMS reminder error:', err);
+    return res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 });
 
