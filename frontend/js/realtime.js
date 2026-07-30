@@ -111,7 +111,7 @@ async function pollServiceAlerts() {
         const days = getDaysUntil(v.next_service_date);
         const item = document.createElement('div');
         item.className = 'alert-banner-item';
-        item.innerHTML = `⚠️ <strong>${v.vehicle_number}</strong> (${v.make} ${v.model}) — Service due on <strong>${formatDate(v.next_service_date)}</strong> (${days <= 0 ? '<span style="color:#ff4444">OVERDUE</span>' : days + ' days left'}). Owner: <strong>${v.owner_phone || 'N/A'}</strong> | Driver: <strong>${v.driver_phone || 'N/A'}</strong>`;
+        item.innerHTML = `⚠️ <strong>${v.vehicle_number}</strong> (${v.make} ${v.model || ''}) — Service due on <strong>${formatDate(v.next_service_date)}</strong> (${days <= 0 ? '<span style="color:#ff4444">OVERDUE</span>' : days + ' days left'}). Owner: <strong>${v.owner_phone || 'N/A'}</strong> | Driver: <strong>${v.driver_phone || 'N/A'}</strong> <button onclick="sendGlobalSmsReminder(${v.id})" style="margin-left:10px; font-size:11px; padding:3px 8px; background:linear-gradient(135deg, #FF9900, #FF6600); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">📲 Send AWS SMS</button>`;
         itemsContainer.appendChild(item);
       });
     } else if (banner) {
@@ -123,6 +123,45 @@ async function pollServiceAlerts() {
     console.warn('Service alert poll failed:', e.message);
   }
 }
+
+/**
+ * Send AWS SNS SMS Reminder (Global Handler)
+ */
+async function sendGlobalSmsReminder(vehicleId) {
+  const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
+  const activeBtn = window.event ? window.event.target : null;
+  if (activeBtn) {
+    activeBtn.disabled = true;
+    activeBtn.textContent = 'Sending...';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/service/send-sms-reminder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(vehicleId ? { vehicle_id: vehicleId } : {})
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`✅ AWS SNS SMS Sent Successfully!\n\n${data.message}\nSent: ${data.sentCount}, Failed: ${data.failedCount}`);
+    } else {
+      alert(`⚠️ SMS Dispatch Notice: ${data.message || data.error}\n(Make sure AWS credentials or EC2 IAM Role are configured)`);
+    }
+  } catch(err) {
+    console.error('SMS reminder error:', err);
+    alert('❌ Failed to connect to SMS service backend. Check network or server status.');
+  } finally {
+    if (activeBtn) {
+      activeBtn.disabled = false;
+      activeBtn.textContent = '📲 Send AWS SMS';
+    }
+  }
+}
+window.sendGlobalSmsReminder = sendGlobalSmsReminder;
 
 /**
  * Utility: days until a date string (negative = overdue)
