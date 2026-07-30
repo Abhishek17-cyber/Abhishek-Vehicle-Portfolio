@@ -387,12 +387,13 @@
         items.innerHTML = alerts.map(v => {
           const days = getDaysUntil(v.next_service_date);
           const daysStr = days <= 0
-            ? `<span class="fw-bold">OVERDUE</span>`
+            ? `<span class="fw-bold text-danger">OVERDUE</span>`
             : `<span class="fw-bold">${days} day(s) left</span>`;
           return `
-            <div class="mb-1">
+            <div class="mb-2 pb-1 border-bottom border-light">
               <strong>${v.vehicle_number}</strong> (${v.make || ''} ${v.model || ''}) &mdash;
               Next service: <span class="fw-bold">${formatDate(v.next_service_date)}</span> &mdash; ${daysStr}
+              <button onclick="sendGlobalSmsReminder(${v.id})" class="btn btn-sm btn-warning py-0 px-2 ms-2 fw-bold text-white" style="font-size:11px; background:linear-gradient(135deg, #FF9900, #FF6600); border:none;">📲 Send AWS SMS</button>
             </div>`;
         }).join('');
       };
