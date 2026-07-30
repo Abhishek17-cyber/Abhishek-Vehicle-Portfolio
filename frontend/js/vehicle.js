@@ -633,21 +633,21 @@ async function saveVehicle() {
   const token = getToken();
 
   const payload = {
-    vehicle_number: document.getElementById('editVehicleNumber').value.trim(),
-    make: document.getElementById('editMake').value.trim(),
-    model: document.getElementById('editModel').value.trim(),
-    year: document.getElementById('editYear').value || null,
-    vehicle_type: document.getElementById('editVehicleType').value || null,
-    owner_name: document.getElementById('editOwnerName').value.trim(),
-    owner_phone: document.getElementById('editOwnerPhone').value.trim(),
-    owner_address: document.getElementById('editOwnerAddress').value.trim(),
-    driver_name: document.getElementById('editDriverName').value.trim(),
-    driver_phone: document.getElementById('editDriverPhone').value.trim(),
-    driver_salary: document.getElementById('editDriverSalary').value || null,
+    vehicle_number: document.getElementById('editVehicleNumber')?.value?.trim() || '',
+    make: document.getElementById('editMake')?.value?.trim() || '',
+    model: document.getElementById('editModel')?.value?.trim() || '',
+    year: document.getElementById('editYear')?.value || null,
+    vehicle_type: document.getElementById('editVehicleType')?.value || null,
+    owner_name: document.getElementById('editOwnerName')?.value?.trim() || '',
+    owner_phone: document.getElementById('editOwnerPhone')?.value?.trim() || '',
+    owner_address: document.getElementById('editOwnerAddress')?.value?.trim() || '',
+    driver_name: document.getElementById('editDriverName')?.value?.trim() || '',
+    driver_phone: document.getElementById('editDriverPhone')?.value?.trim() || '',
+    driver_salary: document.getElementById('editDriverSalary')?.value || null,
     driver_user_id: document.getElementById('editDriverUserSelect')?.value || null,
-    next_service_date: document.getElementById('editNextService').value || null,
-    status: document.getElementById('editStatus').value,
-    description: document.getElementById('editDescription').value.trim()
+    next_service_date: document.getElementById('editNextService')?.value || null,
+    status: document.getElementById('editStatus')?.value || 'active',
+    description: document.getElementById('editDescription')?.value?.trim() || ''
   };
 
   try {

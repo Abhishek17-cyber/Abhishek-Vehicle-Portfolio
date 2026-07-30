@@ -361,6 +361,17 @@
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Make</label><input type="text" id="editMake" class="form-control" value="${v.make || ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Model</label><input type="text" id="editModel" class="form-control" value="${v.model || ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Year</label><input type="number" id="editYear" class="form-control" value="${v.year || ''}"></div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small fw-bold">Vehicle Type</label>
+              <select id="editVehicleType" class="form-select">
+                <option value="truck" ${v.vehicle_type === 'truck' ? 'selected' : ''}>Truck</option>
+                <option value="tipper" ${v.vehicle_type === 'tipper' ? 'selected' : ''}>Tipper</option>
+                <option value="trailer" ${v.vehicle_type === 'trailer' ? 'selected' : ''}>Trailer</option>
+                <option value="container" ${v.vehicle_type === 'container' ? 'selected' : ''}>Container</option>
+                <option value="tanker" ${v.vehicle_type === 'tanker' ? 'selected' : ''}>Tanker</option>
+                <option value="other" ${v.vehicle_type === 'other' ? 'selected' : ''}>Other</option>
+              </select>
+            </div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Owner Name</label><input type="text" id="editOwnerName" class="form-control" value="${v.owner_name || ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Owner Phone</label><input type="text" id="editOwnerPhone" class="form-control" value="${v.owner_phone || ''}"></div>
             <div class="col-md-6">

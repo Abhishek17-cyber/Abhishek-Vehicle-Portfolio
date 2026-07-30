@@ -151,8 +151,8 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   try {
-    // Verify ownership
-    const [existing] = await db.execute('SELECT id FROM vehicles WHERE id = ? AND owner_id = ?', [req.params.id, req.user.id]);
+    // Verify ownership or admin role
+    const [existing] = await db.execute('SELECT id FROM vehicles WHERE id = ? AND (owner_id = ? OR ? = "admin")', [req.params.id, req.user.id, req.user.role]);
     if (!existing.length) {
       return res.status(404).json({ message: 'Vehicle not found or unauthorized' });
     }
@@ -181,7 +181,7 @@ router.put('/:id', async (req, res) => {
         service_reminder_days = COALESCE(?, service_reminder_days),
         status = COALESCE(?, status),
         driver_user_id = ?
-      WHERE id = ? AND owner_id = ?`,
+      WHERE id = ? AND (owner_id = ? OR ? = "admin")`,
       [
         vehicle_number || null, make || null, model || null,
         year || null, purchase_date || null,
@@ -200,7 +200,8 @@ router.put('/:id', async (req, res) => {
         status || null,
         req.body.driver_user_id || null,
         req.params.id,
-        req.user.id
+        req.user.id,
+        req.user.role
       ]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found' });
