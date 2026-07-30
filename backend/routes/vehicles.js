@@ -139,7 +139,7 @@ router.get('/:id', async (req, res) => {
 // ===== PUT /api/vehicles/:id =====
 router.put('/:id', async (req, res) => {
   if (req.user.role !== 'owner' && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Only owners can update vehicles' });
+    return res.status(403).json({ message: 'Only owners or admins can update vehicles' });
   }
 
   const {
@@ -151,13 +151,10 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   try {
-    // Verify ownership or admin role
-    const [existing] = await db.execute(
-      'SELECT id, owner_id FROM vehicles WHERE id = ? AND (owner_id = ? OR owner_id IS NULL OR ? = "admin")',
-      [req.params.id, req.user.id, req.user.role]
-    );
+    // Verify vehicle exists
+    const [existing] = await db.execute('SELECT id FROM vehicles WHERE id = ?', [req.params.id]);
     if (!existing.length) {
-      return res.status(404).json({ message: 'Vehicle not found or unauthorized' });
+      return res.status(404).json({ message: 'Vehicle not found' });
     }
 
     // Data sanitization
@@ -176,6 +173,9 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    let cleanVehicleType = vehicle_type ? vehicle_type.trim() : null;
+    if (cleanVehicleType === '') cleanVehicleType = null;
+
     const [result] = await db.execute(
       `UPDATE vehicles SET
         vehicle_number = COALESCE(?, vehicle_number),
@@ -187,7 +187,7 @@ router.put('/:id', async (req, res) => {
         length_unit = COALESCE(?, length_unit),
         weight = ?,
         weight_unit = COALESCE(?, weight_unit),
-        vehicle_type = COALESCE(?, vehicle_type),
+        vehicle_type = ?,
         photo_url = COALESCE(?, photo_url),
         owner_name = COALESCE(?, owner_name),
         owner_phone = COALESCE(?, owner_phone),
@@ -200,7 +200,7 @@ router.put('/:id', async (req, res) => {
         service_reminder_days = COALESCE(?, service_reminder_days),
         status = COALESCE(?, status),
         driver_user_id = ?
-      WHERE id = ? AND (owner_id = ? OR owner_id IS NULL OR ? = "admin")`,
+      WHERE id = ?`,
       [
         vehicle_number || null,
         make || null,
@@ -211,7 +211,7 @@ router.put('/:id', async (req, res) => {
         length_unit || null,
         weight || null,
         weight_unit || null,
-        vehicle_type || null,
+        cleanVehicleType,
         photo_url || null,
         owner_name || null,
         owner_phone || null,
@@ -224,19 +224,17 @@ router.put('/:id', async (req, res) => {
         service_reminder_days || null,
         status || null,
         driverUserId,
-        req.params.id,
-        req.user.id,
-        req.user.role
+        req.params.id
       ]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found or no changes made' });
+
     return res.json({ message: 'Vehicle updated successfully' });
   } catch(err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Vehicle number already exists' });
     }
     console.error('Update vehicle error:', err);
-    return res.status(500).json({ message: 'Update failed: ' + (err.sqlMessage || err.message) });
+    return res.status(400).json({ message: 'Update failed: ' + (err.sqlMessage || err.message) });
   }
 });
 

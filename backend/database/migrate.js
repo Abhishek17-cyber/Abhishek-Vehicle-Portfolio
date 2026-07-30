@@ -60,6 +60,14 @@ async function run() {
     }
   }
 
+  // Modify vehicle_type column to VARCHAR(100) to avoid ENUM truncation errors
+  try {
+    await pool.query('ALTER TABLE vehicles MODIFY COLUMN vehicle_type VARCHAR(100) NULL');
+    console.log('✅ Modified vehicle_type column to VARCHAR(100) successfully');
+  } catch (err) {
+    console.error('❌ Error modifying vehicle_type column:', err.message);
+  }
+
   await pool.end();
   console.log('Migration finished!');
 }
