@@ -43,8 +43,8 @@ async function queryBedrockAI(prompt, fleetContext = {}) {
     throw new Error('Amazon Bedrock Client is not initialized.');
   }
 
-  // Model ID: Anthropic Claude 3 Haiku (Fast & cost-effective) or Meta Llama 3
-  const modelId = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0';
+  // Model ID: Amazon Titan Text Express (Enabled by default on all AWS accounts)
+  const modelId = process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-express-v1';
 
   const systemPrompt = `You are "FleetIQ AI", an expert AI assistant for Abhishek's Vehicle Portfolio Fleet Management System.
 You provide helpful, concise, professional, and actionable insights to vehicle owners and drivers.
