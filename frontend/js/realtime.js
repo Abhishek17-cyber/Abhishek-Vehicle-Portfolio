@@ -168,7 +168,14 @@ window.sendGlobalSmsReminder = sendGlobalSmsReminder;
  */
 function getDaysUntil(dateStr) {
   if (!dateStr) return null;
-  const target = new Date(dateStr);
+  const str = typeof dateStr === 'string' ? dateStr.split('T')[0] : dateStr;
+  const parts = typeof str === 'string' ? str.split('-') : null;
+  let target;
+  if (parts && parts.length === 3) {
+    target = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  } else {
+    target = new Date(dateStr);
+  }
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);
@@ -180,8 +187,14 @@ function getDaysUntil(dateStr) {
  */
 function formatDate(dateStr) {
   if (!dateStr) return 'N/A';
+  const str = typeof dateStr === 'string' ? dateStr.split('T')[0] : dateStr;
+  const parts = typeof str === 'string' ? str.split('-') : null;
+  if (parts && parts.length === 3) {
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
   const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
+  if (isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
