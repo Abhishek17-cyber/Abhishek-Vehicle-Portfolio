@@ -10,7 +10,8 @@ async function updateSchema() {
       `ALTER TABLE driver_profiles ADD COLUMN reference_contact_number VARCHAR(20) DEFAULT NULL;`,
       `ALTER TABLE driver_profiles ADD COLUMN reference_consent BOOLEAN DEFAULT FALSE;`,
       `ALTER TABLE vehicles MODIFY COLUMN vehicle_type VARCHAR(100) DEFAULT NULL;`,
-      `ALTER TABLE vehicles ADD COLUMN last_service_sms_date DATE DEFAULT NULL;`
+      `ALTER TABLE vehicles ADD COLUMN last_service_sms_date DATE DEFAULT NULL;`,
+      `ALTER TABLE vehicles ADD COLUMN last_service_date DATE DEFAULT NULL;`
     ];
     
     for (const q of queries) {

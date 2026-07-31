@@ -285,16 +285,25 @@
               <!-- Service Reminder -->
               <div class="card glass-panel fade-in-up mb-4">
                 <div class="card-header bg-transparent py-3 border-bottom-0">
-                  <h6 class="m-0 font-weight-bold text-danger text-uppercase"><i class="bi bi-wrench me-2"></i>Service</h6>
+                  <h6 class="m-0 font-weight-bold text-danger text-uppercase"><i class="bi bi-wrench me-2"></i>Service Details</h6>
                 </div>
                 <div class="card-body px-4 pb-4">
+                  <div class="mb-3">
+                    <label for="lastServiceDate" class="form-label text-secondary fw-semibold small">Last Service Date</label>
+                    <input type="date" id="lastServiceDate" class="form-control">
+                  </div>
                   <div class="mb-3">
                     <label for="nextServiceDate" class="form-label text-secondary fw-semibold small">Next Service Date</label>
                     <input type="date" id="nextServiceDate" class="form-control">
                   </div>
                   <div class="mb-0">
                     <label for="serviceReminderDays" class="form-label text-secondary fw-semibold small">Remind Before (days)</label>
-                    <input type="number" id="serviceReminderDays" class="form-control" value="7" min="1" max="30">
+                    <select id="serviceReminderDays" class="form-select">
+                      <option value="3">3 Days Before</option>
+                      <option value="7" selected>7 Days Before</option>
+                      <option value="15">15 Days Before</option>
+                      <option value="30">30 Days Before</option>
+                    </select>
                   </div>
                 </div>
               </div>

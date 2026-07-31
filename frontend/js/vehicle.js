@@ -254,8 +254,9 @@ async function handleAddVehicle(e) {
       driver_salary: document.getElementById('driverSalary').value || null,
       driver_user_id: document.getElementById('driverUserSelect')?.value || null,
       description: document.getElementById('description').value.trim() || null,
+      last_service_date: document.getElementById('lastServiceDate')?.value || null,
       next_service_date: document.getElementById('nextServiceDate').value || null,
-      service_reminder_days: document.getElementById('serviceReminderDays').value || 7,
+      service_reminder_days: document.getElementById('serviceReminderDays')?.value || 7,
       status: document.getElementById('status').value
     };
 
@@ -418,6 +419,9 @@ function renderVehicleDetail(v) {
     { label: 'Purchase Date', value: formatDate(v.purchase_date) },
     { label: 'Length', value: v.length ? `${v.length} ${v.length_unit}` : 'N/A' },
     { label: 'Weight', value: v.weight ? `${v.weight} ${v.weight_unit}` : 'N/A' },
+    { label: 'Last Service', value: formatDate(v.last_service_date) },
+    { label: 'Next Service', value: formatDate(v.next_service_date) },
+    { label: 'Reminder Days', value: v.service_reminder_days ? `${v.service_reminder_days} days before` : '7 days before' },
     { label: 'Status', value: statusText },
     { label: 'Description', value: v.description, full: true }
   ]);
@@ -652,7 +656,9 @@ async function saveVehicle() {
     driver_phone: document.getElementById('editDriverPhone')?.value?.trim() || '',
     driver_salary: document.getElementById('editDriverSalary')?.value || null,
     driver_user_id: document.getElementById('editDriverUserSelect')?.value || null,
+    last_service_date: document.getElementById('editLastService')?.value || null,
     next_service_date: document.getElementById('editNextService')?.value || null,
+    service_reminder_days: document.getElementById('editServiceReminderDays')?.value || 7,
     status: document.getElementById('editStatus')?.value || 'active',
     description: document.getElementById('editDescription')?.value?.trim() || ''
   };

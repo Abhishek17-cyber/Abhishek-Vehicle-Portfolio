@@ -78,7 +78,7 @@ router.post('/', [
     length, length_unit, weight, weight_unit, vehicle_type, photo_url,
     owner_name, owner_phone, owner_address,
     driver_name, driver_phone, driver_salary,
-    description, next_service_date, service_reminder_days, status
+    description, last_service_date, next_service_date, service_reminder_days, status
   } = req.body;
 
   try {
@@ -88,8 +88,8 @@ router.post('/', [
         length, length_unit, weight, weight_unit, vehicle_type, photo_url,
         owner_name, owner_phone, owner_address,
         driver_name, driver_phone, driver_salary,
-        description, next_service_date, service_reminder_days, status, owner_id, driver_user_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        description, last_service_date, next_service_date, service_reminder_days, status, owner_id, driver_user_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         vehicle_number, make, model,
         year || null, purchase_date || null,
@@ -99,7 +99,7 @@ router.post('/', [
         photo_url || null,
         owner_name, owner_phone, owner_address || null,
         driver_name || null, driver_phone || null, driver_salary || null,
-        description || null, next_service_date || null,
+        description || null, last_service_date || null, next_service_date || null,
         service_reminder_days || 7, status || 'active', req.user.id,
         req.body.driver_user_id || null
       ]
@@ -148,7 +148,7 @@ router.put('/:id', async (req, res) => {
       length, length_unit, weight, weight_unit, vehicle_type, photo_url,
       owner_name, owner_phone, owner_address,
       driver_name, driver_phone, driver_salary,
-      description, next_service_date, service_reminder_days, status
+      description, last_service_date, next_service_date, service_reminder_days, status
     } = req.body;
 
     // Verify vehicle exists
@@ -177,6 +177,14 @@ router.put('/:id', async (req, res) => {
     const validYear = (year && !isNaN(year) && parseInt(year) > 1900) ? parseInt(year) : null;
     const validSalary = (driver_salary !== null && driver_salary !== undefined && driver_salary !== '' && !isNaN(driver_salary)) ? parseFloat(driver_salary) : null;
 
+    let cleanLastServiceDate = null;
+    if (last_service_date && typeof last_service_date === 'string' && last_service_date.trim() !== '') {
+      const d = new Date(last_service_date);
+      if (!isNaN(d.getTime())) {
+        cleanLastServiceDate = d.toISOString().split('T')[0];
+      }
+    }
+
     let cleanNextServiceDate = null;
     if (next_service_date && typeof next_service_date === 'string' && next_service_date.trim() !== '') {
       const d = new Date(next_service_date);
@@ -188,6 +196,7 @@ router.put('/:id', async (req, res) => {
     let cleanVehicleType = (typeof vehicle_type === 'string' && vehicle_type.trim() !== '') ? vehicle_type.trim() : null;
 
     const validStatus = ['active', 'inactive', 'in_service'].includes(status) ? status : 'active';
+    const validReminderDays = (service_reminder_days && !isNaN(service_reminder_days)) ? parseInt(service_reminder_days) : 7;
 
     const [result] = await db.execute(
       `UPDATE vehicles SET
@@ -209,8 +218,9 @@ router.put('/:id', async (req, res) => {
         driver_phone = ?,
         driver_salary = ?,
         description = ?,
+        last_service_date = ?,
         next_service_date = ?,
-        service_reminder_days = COALESCE(?, service_reminder_days),
+        service_reminder_days = ?,
         status = ?,
         driver_user_id = ?
       WHERE id = ?`,
@@ -233,8 +243,9 @@ router.put('/:id', async (req, res) => {
         driver_phone !== undefined ? driver_phone : null,
         validSalary,
         description !== undefined ? description : null,
+        cleanLastServiceDate,
         cleanNextServiceDate,
-        service_reminder_days || null,
+        validReminderDays,
         validStatus,
         driverUserId,
         req.params.id

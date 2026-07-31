@@ -385,8 +385,18 @@
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Name (Display)</label><input type="text" id="editDriverName" class="form-control" value="${v.driver_name || ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Phone</label><input type="text" id="editDriverPhone" class="form-control" value="${v.driver_phone || ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Driver Salary (₹)</label><input type="number" id="editDriverSalary" class="form-control" value="${v.driver_salary || ''}"></div>
+            <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Last Service Date</label><input type="date" id="editLastService" class="form-control" value="${v.last_service_date ? v.last_service_date.split('T')[0] : ''}"></div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Next Service Date</label><input type="date" id="editNextService" class="form-control" value="${v.next_service_date ? v.next_service_date.split('T')[0] : ''}"></div>
-            <div class="col-md-12">
+            <div class="col-md-6">
+              <label class="form-label text-secondary small fw-bold">Service Reminder Days</label>
+              <select id="editServiceReminderDays" class="form-select">
+                <option value="3" ${parseInt(v.service_reminder_days) === 3 ? 'selected' : ''}>3 Days Before</option>
+                <option value="7" ${!v.service_reminder_days || parseInt(v.service_reminder_days) === 7 ? 'selected' : ''}>7 Days Before</option>
+                <option value="15" ${parseInt(v.service_reminder_days) === 15 ? 'selected' : ''}>15 Days Before</option>
+                <option value="30" ${parseInt(v.service_reminder_days) === 30 ? 'selected' : ''}>30 Days Before</option>
+              </select>
+            </div>
+            <div class="col-md-6">
               <label class="form-label text-secondary small fw-bold">Status</label>
               <select id="editStatus" class="form-select">
                 <option value="active" ${v.status === 'active' ? 'selected' : ''}>Active</option>
