@@ -74,6 +74,7 @@ app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/compliance', require('./routes/compliance'));
 app.use('/api/ocr', require('./routes/ocr'));
+app.use('/api/ai', require('./routes/ai'));
 
 // ===== SERVE FRONTEND STATIC FILES =====
 app.use(express.static(path.join(__dirname, '../frontend')));
