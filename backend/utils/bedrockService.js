@@ -4,23 +4,32 @@
  * to answer fleet management queries, generate insights, and extract information.
  */
 
-const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
+let BedrockRuntimeClient, InvokeModelCommand;
+try {
+  const sdk = require('@aws-sdk/client-bedrock-runtime');
+  BedrockRuntimeClient = sdk.BedrockRuntimeClient;
+  InvokeModelCommand = sdk.InvokeModelCommand;
+} catch (e) {
+  console.warn('⚠️ @aws-sdk/client-bedrock-runtime package not loaded:', e.message);
+}
 
 // Initialize Bedrock Runtime Client
 const region = process.env.AWS_REGION || 'ap-south-1';
 let bedrockClient = null;
 
-try {
-  bedrockClient = new BedrockRuntimeClient({
-    region: region,
-    credentials: process.env.AWS_ACCESS_KEY_ID ? {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-    } : undefined // Fallback to EC2 IAM Role if environment vars not set
-  });
-  console.log(`🤖 Amazon Bedrock Client initialized in region: ${region}`);
-} catch (err) {
-  console.warn('⚠️ Amazon Bedrock Client initialization warning:', err.message);
+if (BedrockRuntimeClient) {
+  try {
+    bedrockClient = new BedrockRuntimeClient({
+      region: region,
+      credentials: process.env.AWS_ACCESS_KEY_ID ? {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+      } : undefined // Fallback to EC2 IAM Role if environment vars not set
+    });
+    console.log(`🤖 Amazon Bedrock Client initialized in region: ${region}`);
+  } catch (err) {
+    console.warn('⚠️ Amazon Bedrock Client initialization warning:', err.message);
+  }
 }
 
 /**
