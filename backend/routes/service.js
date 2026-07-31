@@ -14,20 +14,20 @@ router.use(verifyToken);
 // ===== GET /api/service/alerts =====
 router.get('/alerts', async (req, res) => {
   try {
-    const days = req.query.days ? parseInt(req.query.days) : 7;
+    const defaultDays = req.query.days ? parseInt(req.query.days) : 7;
     const isDriver = req.user.role === 'driver';
     const [rows] = await db.execute(
       `SELECT v.id, v.vehicle_number, v.make, v.model,
               v.owner_name, v.owner_phone,
               v.driver_name, v.driver_phone,
-              v.next_service_date,
+              v.last_service_date, v.next_service_date, v.service_reminder_days,
               DATEDIFF(v.next_service_date, CURDATE()) AS days_until_service
        FROM vehicles v
        WHERE v.next_service_date IS NOT NULL
          AND ${isDriver ? 'v.driver_user_id = ?' : 'v.owner_id = ?'}
-         AND DATEDIFF(v.next_service_date, CURDATE()) <= ?
+         AND DATEDIFF(v.next_service_date, CURDATE()) <= COALESCE(v.service_reminder_days, ?)
        ORDER BY v.next_service_date ASC`,
-      [req.user.id, days]
+      [req.user.id, defaultDays]
     );
     return res.json(rows);
   } catch(err) {

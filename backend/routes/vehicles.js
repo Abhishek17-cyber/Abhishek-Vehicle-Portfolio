@@ -15,18 +15,18 @@ router.use(verifyToken);
 // Must be defined BEFORE /:id to avoid param conflict
 router.get('/service-alerts', async (req, res) => {
   try {
-    const days = req.query.days ? parseInt(req.query.days) : 7;
+    const defaultDays = req.query.days ? parseInt(req.query.days) : 7;
     const isDriver = req.user.role === 'driver';
     const [rows] = await db.execute(
       `SELECT id, vehicle_number, make, model, year, owner_name, owner_phone,
-              driver_name, driver_phone, next_service_date, service_reminder_days, status
+              driver_name, driver_phone, last_service_date, next_service_date, service_reminder_days, status
        FROM vehicles
        WHERE next_service_date IS NOT NULL
          AND ${isDriver ? 'driver_user_id = ?' : 'owner_id = ?'}
-         AND DATEDIFF(next_service_date, CURDATE()) <= ?
+         AND DATEDIFF(next_service_date, CURDATE()) <= COALESCE(service_reminder_days, ?)
          AND DATEDIFF(next_service_date, CURDATE()) >= -30
        ORDER BY next_service_date ASC`,
-      [req.user.id, days]
+      [req.user.id, defaultDays]
     );
     return res.json(rows);
   } catch(err) {
