@@ -239,7 +239,6 @@ async function loadServiceAlertsCheck() {
           <div class="mb-2 pb-1 border-bottom border-light">
             <strong>${v.vehicle_number}</strong> (${v.make || ''} ${v.model || ''}) &mdash;
             Next service: <span class="fw-bold">${formatDate(v.next_service_date)}</span> &mdash; ${daysStr}
-            <button onclick="sendGlobalSmsReminder(${v.id})" class="btn btn-sm btn-warning py-0 px-2 ms-2 fw-bold text-white" style="font-size:11px; background:linear-gradient(135deg, #FF9900, #FF6600); border:none;">📲 Send AWS SMS</button>
             <br>
             <span class="text-muted"><i class="bi bi-person me-1"></i>Owner: ${v.owner_name || 'N/A'} <i class="bi bi-telephone ms-1 me-1"></i><a href="tel:${v.owner_phone}" class="text-decoration-none">${v.owner_phone || 'N/A'}</a> | <i class="bi bi-person-badge ms-1 me-1"></i>Driver: ${v.driver_name || 'N/A'} <i class="bi bi-telephone ms-1 me-1"></i><a href="tel:${v.driver_phone}" class="text-decoration-none">${v.driver_phone || 'N/A'}</a></span>
           </div>`;

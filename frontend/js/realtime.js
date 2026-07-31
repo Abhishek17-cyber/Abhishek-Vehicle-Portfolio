@@ -111,7 +111,7 @@ async function pollServiceAlerts() {
         const days = getDaysUntil(v.next_service_date);
         const item = document.createElement('div');
         item.className = 'alert-banner-item';
-        item.innerHTML = `⚠️ <strong>${v.vehicle_number}</strong> (${v.make} ${v.model || ''}) — Service due on <strong>${formatDate(v.next_service_date)}</strong> (${days <= 0 ? '<span style="color:#ff4444">OVERDUE</span>' : days + ' days left'}). Owner: <strong>${v.owner_phone || 'N/A'}</strong> | Driver: <strong>${v.driver_phone || 'N/A'}</strong> <button onclick="sendGlobalSmsReminder(${v.id})" style="margin-left:10px; font-size:11px; padding:3px 8px; background:linear-gradient(135deg, #FF9900, #FF6600); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">📲 Send AWS SMS</button>`;
+        item.innerHTML = `⚠️ <strong>${v.vehicle_number}</strong> (${v.make} ${v.model || ''}) — Service due on <strong>${formatDate(v.next_service_date)}</strong> (${days <= 0 ? '<span style="color:#ff4444">OVERDUE</span>' : days + ' days left'}). Owner: <strong>${v.owner_phone || 'N/A'}</strong> | Driver: <strong>${v.driver_phone || 'N/A'}</strong>`;
         itemsContainer.appendChild(item);
       });
     } else if (banner) {

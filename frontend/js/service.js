@@ -103,7 +103,6 @@ async function checkServiceAlerts() {
           📞 <a href="tel:${v.owner_phone}" style="color:var(--accent-blue);">${v.owner_phone || 'N/A'}</a> |
           Driver: <strong>${v.driver_name || 'N/A'}</strong>
           📞 <a href="tel:${v.driver_phone}" style="color:var(--accent-blue);">${v.driver_phone || 'N/A'}</a>
-          <button onclick="sendSmsReminder(${v.id})" style="margin-left:12px; font-size:12px; padding:4px 10px; background:linear-gradient(135deg, #FF9900, #FF6600); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">📲 Send AWS SMS</button>
         `;
         itemsContainer.appendChild(item);
       });
