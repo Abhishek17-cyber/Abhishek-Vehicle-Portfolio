@@ -90,6 +90,8 @@ app.use((err, req, res, next) => {
 });
 
 // ===== START SERVER =====
+const { initSMSScheduler } = require('./utils/smsScheduler');
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════════╗');
@@ -100,6 +102,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  📁  Uploads dir:  ${uploadDir}`);
   console.log(`  🌍  Environment:  ${process.env.NODE_ENV || 'development'}`);
   console.log('');
+  
+  // Initialize Automatic Service SMS Reminder Scheduler
+  initSMSScheduler();
 });
 
 module.exports = app;
