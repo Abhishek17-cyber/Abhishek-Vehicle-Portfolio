@@ -179,18 +179,12 @@ router.put('/:id', async (req, res) => {
 
     let cleanLastServiceDate = null;
     if (last_service_date && typeof last_service_date === 'string' && last_service_date.trim() !== '') {
-      const d = new Date(last_service_date);
-      if (!isNaN(d.getTime())) {
-        cleanLastServiceDate = d.toISOString().split('T')[0];
-      }
+      cleanLastServiceDate = last_service_date.trim().split('T')[0];
     }
 
     let cleanNextServiceDate = null;
     if (next_service_date && typeof next_service_date === 'string' && next_service_date.trim() !== '') {
-      const d = new Date(next_service_date);
-      if (!isNaN(d.getTime())) {
-        cleanNextServiceDate = d.toISOString().split('T')[0];
-      }
+      cleanNextServiceDate = next_service_date.trim().split('T')[0];
     }
 
     let cleanVehicleType = (typeof vehicle_type === 'string' && vehicle_type.trim() !== '') ? vehicle_type.trim() : null;
