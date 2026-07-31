@@ -625,7 +625,14 @@ function toggleEdit() {
 }
 
 function closeModal() {
-  document.getElementById('editModal').classList.remove('active');
+  const modalEl = document.getElementById('editModal');
+  if (modalEl) {
+    modalEl.classList.remove('active');
+    if (window.bootstrap && bootstrap.Modal) {
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+  }
 }
 
 async function saveVehicle() {

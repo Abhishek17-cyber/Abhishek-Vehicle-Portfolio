@@ -138,43 +138,56 @@ router.get('/:id', async (req, res) => {
 
 // ===== PUT /api/vehicles/:id =====
 router.put('/:id', async (req, res) => {
-  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Only owners or admins can update vehicles' });
-  }
-
-  const {
-    vehicle_number, make, model, year, purchase_date,
-    length, length_unit, weight, weight_unit, vehicle_type, photo_url,
-    owner_name, owner_phone, owner_address,
-    driver_name, driver_phone, driver_salary,
-    description, next_service_date, service_reminder_days, status
-  } = req.body;
-
   try {
+    if (!req.user || (req.user.role !== 'owner' && req.user.role !== 'admin')) {
+      return res.status(403).json({ message: 'Only owners or admins can update vehicles' });
+    }
+
+    const {
+      vehicle_number, make, model, year, purchase_date,
+      length, length_unit, weight, weight_unit, vehicle_type, photo_url,
+      owner_name, owner_phone, owner_address,
+      driver_name, driver_phone, driver_salary,
+      description, next_service_date, service_reminder_days, status
+    } = req.body;
+
     // Verify vehicle exists
-    const [existing] = await db.execute('SELECT id FROM vehicles WHERE id = ?', [req.params.id]);
+    const isOwner = req.user.role === 'owner';
+    const [existing] = await db.execute(
+      `SELECT id FROM vehicles WHERE id = ? ${isOwner ? 'AND owner_id = ?' : ''}`,
+      isOwner ? [req.params.id, req.user.id] : [req.params.id]
+    );
+
     if (!existing.length) {
-      return res.status(404).json({ message: 'Vehicle not found' });
+      return res.status(404).json({ message: 'Vehicle not found or unauthorized' });
     }
 
     // Data sanitization
-    const driverUserId = (req.body.driver_user_id && !isNaN(req.body.driver_user_id))
-      ? parseInt(req.body.driver_user_id)
-      : null;
+    let driverUserId = null;
+    if (req.body.driver_user_id !== undefined && req.body.driver_user_id !== null && req.body.driver_user_id !== '') {
+      const parsedDriverId = parseInt(req.body.driver_user_id);
+      if (!isNaN(parsedDriverId) && parsedDriverId > 0) {
+        const [driverCheck] = await db.execute('SELECT id FROM users WHERE id = ? AND role = ?', [parsedDriverId, 'driver']);
+        if (driverCheck.length) {
+          driverUserId = parsedDriverId;
+        }
+      }
+    }
 
-    const validYear = (year && !isNaN(year)) ? parseInt(year) : null;
-    const validSalary = (driver_salary && !isNaN(driver_salary)) ? parseFloat(driver_salary) : null;
+    const validYear = (year && !isNaN(year) && parseInt(year) > 1900) ? parseInt(year) : null;
+    const validSalary = (driver_salary !== null && driver_salary !== undefined && driver_salary !== '' && !isNaN(driver_salary)) ? parseFloat(driver_salary) : null;
 
     let cleanNextServiceDate = null;
-    if (next_service_date) {
+    if (next_service_date && typeof next_service_date === 'string' && next_service_date.trim() !== '') {
       const d = new Date(next_service_date);
       if (!isNaN(d.getTime())) {
         cleanNextServiceDate = d.toISOString().split('T')[0];
       }
     }
 
-    let cleanVehicleType = vehicle_type ? vehicle_type.trim() : null;
-    if (cleanVehicleType === '') cleanVehicleType = null;
+    let cleanVehicleType = (typeof vehicle_type === 'string' && vehicle_type.trim() !== '') ? vehicle_type.trim() : null;
+
+    const validStatus = ['active', 'inactive', 'in_service'].includes(status) ? status : 'active';
 
     const [result] = await db.execute(
       `UPDATE vehicles SET
@@ -198,7 +211,7 @@ router.put('/:id', async (req, res) => {
         description = ?,
         next_service_date = ?,
         service_reminder_days = COALESCE(?, service_reminder_days),
-        status = COALESCE(?, status),
+        status = ?,
         driver_user_id = ?
       WHERE id = ?`,
       [
@@ -222,7 +235,7 @@ router.put('/:id', async (req, res) => {
         description !== undefined ? description : null,
         cleanNextServiceDate,
         service_reminder_days || null,
-        status || null,
+        validStatus,
         driverUserId,
         req.params.id
       ]
@@ -234,7 +247,7 @@ router.put('/:id', async (req, res) => {
       return res.status(409).json({ message: 'Vehicle number already exists' });
     }
     console.error('Update vehicle error:', err);
-    return res.status(400).json({ message: 'Update failed: ' + (err.sqlMessage || err.message) });
+    return res.status(500).json({ message: 'Update failed: ' + (err.sqlMessage || err.message) });
   }
 });
 

@@ -364,12 +364,14 @@
             <div class="col-md-6">
               <label class="form-label text-secondary small fw-bold">Vehicle Type</label>
               <select id="editVehicleType" class="form-select">
-                <option value="truck" ${v.vehicle_type === 'truck' ? 'selected' : ''}>Truck</option>
-                <option value="tipper" ${v.vehicle_type === 'tipper' ? 'selected' : ''}>Tipper</option>
-                <option value="trailer" ${v.vehicle_type === 'trailer' ? 'selected' : ''}>Trailer</option>
-                <option value="container" ${v.vehicle_type === 'container' ? 'selected' : ''}>Container</option>
-                <option value="tanker" ${v.vehicle_type === 'tanker' ? 'selected' : ''}>Tanker</option>
-                <option value="other" ${v.vehicle_type === 'other' ? 'selected' : ''}>Other</option>
+                <option value="">Select Type</option>
+                <option value="Container" ${(v.vehicle_type || '').toLowerCase() === 'container' ? 'selected' : ''}>Container</option>
+                <option value="Body" ${(v.vehicle_type || '').toLowerCase() === 'body' ? 'selected' : ''}>Body</option>
+                <option value="Trailor" ${(v.vehicle_type || '').toLowerCase() === 'trailor' || (v.vehicle_type || '').toLowerCase() === 'trailer' ? 'selected' : ''}>Trailor</option>
+                <option value="Tipper" ${(v.vehicle_type || '').toLowerCase() === 'tipper' ? 'selected' : ''}>Tipper</option>
+                <option value="Tanker" ${(v.vehicle_type || '').toLowerCase() === 'tanker' ? 'selected' : ''}>Tanker</option>
+                <option value="Truck" ${(v.vehicle_type || '').toLowerCase() === 'truck' ? 'selected' : ''}>Truck</option>
+                <option value="Other" ${(v.vehicle_type || '').toLowerCase() === 'other' ? 'selected' : ''}>Other</option>
               </select>
             </div>
             <div class="col-md-6"><label class="form-label text-secondary small fw-bold">Owner Name</label><input type="text" id="editOwnerName" class="form-control" value="${v.owner_name || ''}"></div>
