@@ -405,10 +405,12 @@ function renderVehicleDetail(v) {
   }
 
   // Quick meta
-  document.getElementById('quickOwner').textContent = v.owner_name || 'N/A';
-  document.getElementById('quickDriver').textContent = v.driver_name || 'N/A';
-  document.getElementById('quickOwnerPhone').textContent = v.owner_phone || 'N/A';
-  document.getElementById('quickDriverPhone').textContent = v.driver_phone || 'N/A';
+  if (document.getElementById('quickOwner')) document.getElementById('quickOwner').textContent = v.owner_name || 'N/A';
+  if (document.getElementById('quickDriver')) document.getElementById('quickDriver').textContent = v.driver_name || 'N/A';
+  if (document.getElementById('quickOwnerPhone')) document.getElementById('quickOwnerPhone').textContent = v.owner_phone || 'N/A';
+  if (document.getElementById('quickDriverPhone')) document.getElementById('quickDriverPhone').textContent = v.driver_phone || 'N/A';
+  if (document.getElementById('quickLastService')) document.getElementById('quickLastService').textContent = v.last_service_date ? formatDate(v.last_service_date) : 'N/A';
+  if (document.getElementById('quickNextService')) document.getElementById('quickNextService').textContent = v.next_service_date ? formatDate(v.next_service_date) : 'N/A';
 
   // Vehicle detail fields
   renderInfoFields('vehicleDetailFields', [
