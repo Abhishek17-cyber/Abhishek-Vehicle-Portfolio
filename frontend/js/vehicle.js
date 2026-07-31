@@ -647,7 +647,15 @@ function closeModal() {
 
 async function saveVehicle() {
   const v = currentVehicle;
+  if (!v) return;
   const token = getToken();
+
+  const saveBtn = window.event ? (window.event.target.closest ? window.event.target.closest('button') : window.event.target) : null;
+  const originalHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
+  }
 
   const payload = {
     vehicle_number: document.getElementById('editVehicleNumber')?.value?.trim() || '',
@@ -678,15 +686,22 @@ async function saveVehicle() {
       body: JSON.stringify(payload)
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (res.ok) {
       closeModal();
       loadVehicleDetail(v.id);
     } else {
-      const d = await res.json();
-      alert('Error: ' + (d.message || 'Failed to save'));
+      alert('⚠️ Unable to save changes: ' + (data.message || 'Server error. Make sure node update_db.js was executed on EC2.'));
     }
   } catch(e) {
-    alert('Connection error: ' + e.message);
+    console.error('Save error:', e);
+    alert('❌ Server connection error while updating vehicle.');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalHtml;
+    }
   }
 }
 
