@@ -11,7 +11,9 @@ async function updateSchema() {
       `ALTER TABLE driver_profiles ADD COLUMN reference_consent BOOLEAN DEFAULT FALSE;`,
       `ALTER TABLE vehicles MODIFY COLUMN vehicle_type VARCHAR(100) DEFAULT NULL;`,
       `ALTER TABLE vehicles ADD COLUMN last_service_sms_date DATE DEFAULT NULL;`,
-      `ALTER TABLE vehicles ADD COLUMN last_service_date DATE DEFAULT NULL;`
+      `ALTER TABLE vehicles ADD COLUMN last_service_date DATE DEFAULT NULL;`,
+      `ALTER TABLE vehicles ADD COLUMN owner_email VARCHAR(255) DEFAULT NULL;`,
+      `ALTER TABLE vehicles ADD COLUMN driver_email VARCHAR(255) DEFAULT NULL;`
     ];
     
     for (const q of queries) {

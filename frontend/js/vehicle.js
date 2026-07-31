@@ -249,8 +249,10 @@ async function handleAddVehicle(e) {
       owner_name: ownerName,
       owner_phone: ownerPhone,
       owner_address: document.getElementById('ownerAddress').value.trim() || null,
+      owner_email: document.getElementById('ownerEmail')?.value.trim() || null,
       driver_name: document.getElementById('driverName').value.trim() || null,
       driver_phone: document.getElementById('driverPhone').value.trim() || null,
+      driver_email: document.getElementById('driverEmail')?.value.trim() || null,
       driver_salary: document.getElementById('driverSalary').value || null,
       driver_user_id: document.getElementById('driverUserSelect')?.value || null,
       description: document.getElementById('description').value.trim() || null,
@@ -432,13 +434,15 @@ function renderVehicleDetail(v) {
   renderInfoFields('ownerDetailFields', [
     { label: 'Owner Name', value: v.owner_name },
     { label: 'Owner Phone', value: v.owner_phone },
+    { label: 'Owner Email', value: v.owner_email },
     { label: 'Owner Address', value: v.owner_address, full: true }
   ]);
 
   // Driver fields
   const driverFields = [
     { label: 'Driver Name', value: v.driver_name },
-    { label: 'Driver Phone', value: v.driver_phone }
+    { label: 'Driver Phone', value: v.driver_phone },
+    { label: 'Driver Email', value: v.driver_email }
   ];
   const user = getCurrentUser();
   if (user && user.role !== 'driver') {
@@ -654,8 +658,10 @@ async function saveVehicle() {
     owner_name: document.getElementById('editOwnerName')?.value?.trim() || '',
     owner_phone: document.getElementById('editOwnerPhone')?.value?.trim() || '',
     owner_address: document.getElementById('editOwnerAddress')?.value?.trim() || '',
+    owner_email: document.getElementById('editOwnerEmail')?.value?.trim() || '',
     driver_name: document.getElementById('editDriverName')?.value?.trim() || '',
     driver_phone: document.getElementById('editDriverPhone')?.value?.trim() || '',
+    driver_email: document.getElementById('editDriverEmail')?.value?.trim() || '',
     driver_salary: document.getElementById('editDriverSalary')?.value || null,
     driver_user_id: document.getElementById('editDriverUserSelect')?.value || null,
     last_service_date: document.getElementById('editLastService')?.value || null,
