@@ -163,6 +163,7 @@ function createVehicleCard(v) {
 
   const card = document.createElement('div');
   card.className = 'col-md-6 col-xl-4 col-xxl-3';
+  card.style.cursor = 'pointer';
   
   let mainPhoto = v.photo_url;
   if (mainPhoto) {
@@ -184,7 +185,7 @@ function createVehicleCard(v) {
   const personIcon = isOwner ? 'bi-person' : 'bi-person-badge';
 
   card.innerHTML = `
-    <a href="vehicle-detail.html?id=${v.id}" class="card text-decoration-none text-dark h-100 shadow-sm hover-shadow border-0 position-relative">
+    <div class="card text-decoration-none text-dark h-100 shadow-sm hover-shadow border-0 position-relative" onclick="window.location.href='vehicle-detail.html?id=${v.id}'">
       ${imgHtml}
       ${dueBadge}
       <div class="position-absolute top-0 start-0 m-2 badge ${s.cls} shadow-sm">${s.txt}</div>
@@ -200,7 +201,7 @@ function createVehicleCard(v) {
         <span><i class="bi ${personIcon} me-1"></i>${displayPersonName}</span>
         <span><i class="bi bi-telephone me-1"></i>${displayPersonPhone}</span>
       </div>
-    </a>
+    </div>
   `;
   return card;
 }
