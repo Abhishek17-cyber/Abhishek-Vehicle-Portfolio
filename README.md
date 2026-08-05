@@ -134,6 +134,53 @@ Update `backend/.env`:
 FRONTEND_URL=http://your-bucket.s3-website.ap-south-1.amazonaws.com
 ```
 
+### 🛡️ AWS Bedrock & SNS Access via EC2 IAM Role (Recommended)
+
+Instead of hardcoding AWS Access Keys in `.env`, attach an IAM Role to your EC2 instance for secure, keyless authentication:
+
+1. **Create IAM Role in AWS Console**:
+   - Open AWS IAM Console ➡️ **Roles** ➡️ **Create Role**.
+   - Trusted entity: **AWS Service** ➡️ **EC2**.
+2. **Attach Bedrock Policy**:
+   - Click **Create Policy** and paste the JSON below:
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Sid": "BedrockModelInvocation",
+           "Effect": "Allow",
+           "Action": [
+             "bedrock:InvokeModel",
+             "bedrock:InvokeModelWithResponseStream"
+           ],
+           "Resource": "*"
+         },
+         {
+           "Sid": "SNSNotificationAccess",
+           "Effect": "Allow",
+           "Action": [
+             "sns:Publish"
+           ],
+           "Resource": "*"
+         }
+       ]
+     }
+     ```
+   - Name the policy: `VehiclePortfolioEC2BedrockPolicy`.
+3. **Attach Role to EC2 Instance**:
+   - Go to AWS EC2 Console ➡️ **Instances**.
+   - Select your EC2 instance ➡️ **Actions** ➡️ **Security** ➡️ **Modify IAM role**.
+   - Select your newly created IAM Role and save.
+4. **Configure `.env`**:
+   - In `backend/.env`, leave `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` blank:
+     ```env
+     AWS_REGION=ap-south-1
+     AWS_ACCESS_KEY_ID=
+     AWS_SECRET_ACCESS_KEY=
+     ```
+   - The AWS SDK v3 automatically fetches short-lived credentials from the EC2 Instance Metadata Service (IMDS).
+
 ---
 
 ## 🔐 Default Login Credentials

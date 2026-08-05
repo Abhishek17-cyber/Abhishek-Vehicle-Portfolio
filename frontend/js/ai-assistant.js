@@ -1,6 +1,7 @@
 /**
- * ai-assistant.js — Amazon Bedrock AI Floating Assistant Widget
+ * ai-assistant.js — FleetIQ Direct Smart AI Floating Assistant Widget
  * Renders a floating bot button on all pages that opens an interactive AI Chat drawer.
+ * Powered by direct real-time backend fleet database analytics.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,14 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAiAssistantWidget() {
-  if (document.getElementById('bedrockAiWidget')) return;
+  if (document.getElementById('fleetAiWidget')) return;
 
   // Insert HTML for Floating Widget
   const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'bedrockAiWidget';
+  widgetContainer.id = 'fleetAiWidget';
   widgetContainer.innerHTML = `
     <!-- Floating Launcher Button -->
-    <button id="aiLauncherBtn" onclick="toggleAiDrawer()" title="Ask Amazon Bedrock AI Assistant" style="
+    <button id="aiLauncherBtn" onclick="toggleAiDrawer()" title="Ask FleetIQ Direct AI Assistant" style="
       position: fixed;
       bottom: 24px;
       right: 24px;
@@ -43,9 +44,9 @@ function initAiAssistantWidget() {
       bottom: 96px;
       right: 24px;
       z-index: 9999;
-      width: 380px;
+      width: 390px;
       max-width: calc(100vw - 32px);
-      height: 520px;
+      height: 540px;
       max-height: calc(100vh - 120px);
       background: #ffffff;
       border-radius: 16px;
@@ -59,12 +60,12 @@ function initAiAssistantWidget() {
       <!-- Drawer Header -->
       <div style="background: linear-gradient(135deg, #232F3E, #131921); color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
         <div class="d-flex align-items-center gap-2">
-          <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #FF9900, #FF6600); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 34px; height: 34px; background: linear-gradient(135deg, #FF9900, #FF6600); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
             <i class="bi bi-cpu text-white fs-6"></i>
           </div>
           <div>
             <div class="fw-bold" style="font-size: 14px; line-height: 1.2;">FleetIQ AI Assistant</div>
-            <div style="font-size: 11px; color: #FF9900;">Powered by Amazon Bedrock</div>
+            <div style="font-size: 11px; color: #10B981;">⚡ FleetIQ Direct Smart AI</div>
           </div>
         </div>
         <button onclick="toggleAiDrawer()" style="background: transparent; border: none; color: #8795A1; font-size: 18px; cursor: pointer;"><i class="bi bi-x-lg"></i></button>
@@ -75,13 +76,14 @@ function initAiAssistantWidget() {
         <button onclick="sendAiQuickPrompt('Which vehicles are due for service?')" class="btn btn-sm btn-outline-dark rounded-pill py-0 px-2" style="font-size: 11px;">🔧 Service Due</button>
         <button onclick="sendAiQuickPrompt('What are my recent diesel costs?')" class="btn btn-sm btn-outline-dark rounded-pill py-0 px-2" style="font-size: 11px;">⛽ Fuel Costs</button>
         <button onclick="sendAiQuickPrompt('List all my active vehicles')" class="btn btn-sm btn-outline-dark rounded-pill py-0 px-2" style="font-size: 11px;">🚛 My Vehicles</button>
+        <button onclick="sendAiQuickPrompt('Show complete fleet overview')" class="btn btn-sm btn-outline-dark rounded-pill py-0 px-2" style="font-size: 11px;">📊 Fleet Summary</button>
       </div>
 
       <!-- Chat Messages Container -->
       <div id="aiChatMessages" style="flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #FAFAFA;">
         <div style="background: #EBF8FF; border: 1px solid #BEE3F8; border-radius: 12px; padding: 12px; font-size: 13px; color: #2B6CB0;">
-          👋 <strong>Hello! I am FleetIQ AI.</strong><br>
-          I can analyze your fleet data, track service dates, diesel costs, and trip revenues powered by Amazon Bedrock!
+          👋 <strong>Hello! I am FleetIQ AI Assistant.</strong><br>
+          I can directly analyze your fleet data, track service dates, diesel expenses, trip revenues, and document compliance in real time!
         </div>
       </div>
 
@@ -155,7 +157,7 @@ async function sendAiMessage() {
   const botThinking = document.createElement('div');
   botThinking.id = 'aiThinkingIndicator';
   botThinking.style.cssText = 'align-self: flex-start; background: #EDF2F7; color: #4A5568; border-radius: 14px 14px 14px 2px; padding: 10px 14px; max-width: 85%; font-size: 13px; display: flex; align-items: center; gap: 8px;';
-  botThinking.innerHTML = `<span class="spinner-border spinner-border-sm text-warning" role="status"></span> <span style="font-size:12px;">Amazon Bedrock AI thinking...</span>`;
+  botThinking.innerHTML = `<span class="spinner-border spinner-border-sm text-warning" role="status"></span> <span style="font-size:12px;">FleetIQ AI analyzing fleet data...</span>`;
   messagesDiv.appendChild(botThinking);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -170,6 +172,11 @@ async function sendAiMessage() {
       body: JSON.stringify({ prompt })
     });
 
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `Server returned ${res.status}`);
+    }
+
     const data = await res.json();
     botThinking.remove();
 
@@ -178,7 +185,7 @@ async function sendAiMessage() {
     
     const formattedAnswer = (data.answer || 'No response returned.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     botMsg.innerHTML = `
-      <div style="font-size: 10px; color: #DD6B20; font-weight: bold; margin-bottom: 4px;">⚡ ${data.source || 'Amazon Bedrock AI'}</div>
+      <div style="font-size: 10px; color: #10B981; font-weight: bold; margin-bottom: 4px;">⚡ ${data.source || 'FleetIQ Direct AI Engine'}</div>
       ${formattedAnswer}
     `;
     messagesDiv.appendChild(botMsg);
@@ -186,7 +193,7 @@ async function sendAiMessage() {
     botThinking.remove();
     const errMsg = document.createElement('div');
     errMsg.style.cssText = 'align-self: flex-start; background: #FFF5F5; color: #C53030; border: 1px solid #FEB2B2; border-radius: 12px; padding: 10px 14px; max-width: 85%; font-size: 12px;';
-    errMsg.textContent = '❌ AI Assistant Connection Failed. Please try again.';
+    errMsg.textContent = `❌ AI Assistant Error: ${err.message || 'Connection failed. Please check backend connection.'}`;
     messagesDiv.appendChild(errMsg);
   } finally {
     sendBtn.disabled = false;

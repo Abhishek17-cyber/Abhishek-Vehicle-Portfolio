@@ -4,11 +4,12 @@
  * to answer fleet management queries, generate insights, and extract information.
  */
 
-let BedrockRuntimeClient, InvokeModelCommand;
+let BedrockRuntimeClient, InvokeModelCommand, ConverseCommand;
 try {
   const sdk = require('@aws-sdk/client-bedrock-runtime');
   BedrockRuntimeClient = sdk.BedrockRuntimeClient;
   InvokeModelCommand = sdk.InvokeModelCommand;
+  ConverseCommand = sdk.ConverseCommand;
 } catch (e) {
   console.warn('⚠️ @aws-sdk/client-bedrock-runtime package not loaded:', e.message);
 }
@@ -19,13 +20,21 @@ let bedrockClient = null;
 
 if (BedrockRuntimeClient) {
   try {
-    bedrockClient = new BedrockRuntimeClient({
-      region: region,
-      credentials: process.env.AWS_ACCESS_KEY_ID ? {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-      } : undefined // Fallback to EC2 IAM Role if environment vars not set
-    });
+    const clientConfig = { region };
+
+    // Explicit access keys used if set in environment; otherwise AWS SDK v3 automatically uses attached EC2 IAM Role
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_ID.trim() !== '' &&
+        process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_SECRET_ACCESS_KEY.trim() !== '') {
+      clientConfig.credentials = {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID.trim(),
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY.trim()
+      };
+      console.log('🔑 Amazon Bedrock Client using explicit AWS Access Keys.');
+    } else {
+      console.log('🛡️ Amazon Bedrock Client using EC2 IAM Role / Instance Profile.');
+    }
+
+    bedrockClient = new BedrockRuntimeClient(clientConfig);
     console.log(`🤖 Amazon Bedrock Client initialized in region: ${region}`);
   } catch (err) {
     console.warn('⚠️ Amazon Bedrock Client initialization warning:', err.message);
@@ -122,6 +131,58 @@ ${prompt}`;
   }
 }
 
+/**
+ * Send a query using AWS Bedrock Prompt Management
+ * @param {string} prompt - User's query / question
+ * @param {object} fleetContext - Live database context (vehicles, service, expenses)
+ * @returns {Promise<string>} AI response text
+ */
+async function queryManagedPrompt(prompt, fleetContext = {}) {
+  if (!bedrockClient || !ConverseCommand) {
+    throw new Error('Amazon Bedrock Client or ConverseCommand is not initialized.');
+  }
+
+  // Use the managed prompt ARN
+  const promptArn = process.env.BEDROCK_PROMPT_ARN || 'arn:aws:bedrock:ap-south-1:625249976668:prompt/OH8W47JHWQ';
+
+  // Construct context string to pass as a message 
+  const userContextString = `
+[LIVE FLEET CONTEXT DATA]
+User Role: ${fleetContext.userRole || 'Owner'}
+Total Registered Vehicles: ${fleetContext.totalVehicles || 0}
+Active Vehicles List: ${JSON.stringify(fleetContext.vehicles || [], null, 2)}
+Upcoming/Overdue Service Alerts: ${JSON.stringify(fleetContext.serviceAlerts || [], null, 2)}
+Recent Diesel Expenses: ${JSON.stringify(fleetContext.recentDiesel || [], null, 2)}
+Recent Trips: ${JSON.stringify(fleetContext.recentTrips || [], null, 2)}
+
+[USER QUESTION]
+${prompt}`;
+
+  try {
+    const command = new ConverseCommand({
+      modelId: promptArn,
+      messages: [
+        {
+          role: "user",
+          content: [{ text: userContextString }]
+        }
+      ]
+    });
+
+    const response = await bedrockClient.send(command);
+    
+    if (response.output && response.output.message && response.output.message.content) {
+      return response.output.message.content[0].text.trim();
+    }
+    
+    return JSON.stringify(response.output);
+  } catch (err) {
+    console.error('❌ Amazon Bedrock Prompt Management Error:', err);
+    throw err;
+  }
+}
+
 module.exports = {
-  queryBedrockAI
+  queryBedrockAI,
+  queryManagedPrompt
 };
