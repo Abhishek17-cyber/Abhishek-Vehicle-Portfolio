@@ -87,32 +87,70 @@ Recent Trips: ${JSON.stringify(fleetContext.recentTrips || [], null, 2)}
 ${prompt}`;
 
   try {
-    if (!ConverseCommand) {
-      throw new Error('ConverseCommand is not available in your AWS SDK version.');
+    // Construct payload depending on model family
+    let payload = {};
+    if (modelId.includes('anthropic')) {
+      payload = {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userContextString
+          }
+        ]
+      };
+    } else if (modelId.includes('meta')) {
+      payload = {
+        prompt: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${userContextString}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n`,
+        max_gen_len: 1000,
+        temperature: 0.5
+      };
+    } else if (modelId.includes('deepseek')) {
+      // Deepseek standard JSON structure for Bedrock InvokeModel
+      payload = {
+        prompt: `[INST] <<SYS>>\n${systemPrompt}\n<</SYS>>\n\n${userContextString} [/INST]`,
+        max_tokens: 1000,
+        temperature: 0.5
+      };
+    } else {
+      // Default Titan / Generic format
+      payload = {
+        inputText: `${systemPrompt}\n\n${userContextString}`,
+        textGenerationConfig: { maxTokenCount: 1000, temperature: 0.5 }
+      };
     }
 
-    const command = new ConverseCommand({
+    if (!InvokeModelCommand) {
+      throw new Error('InvokeModelCommand is not available in your AWS SDK version.');
+    }
+
+    const command = new InvokeModelCommand({
       modelId: modelId,
-      messages: [
-        {
-          role: "user",
-          content: [{ text: userContextString }]
-        }
-      ],
-      system: [{ text: systemPrompt }],
-      inferenceConfig: {
-        maxTokens: 1000,
-        temperature: 0.5
-      }
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(payload)
     });
 
     const response = await bedrockClient.send(command);
-    
-    if (response.output && response.output.message && response.output.message.content) {
-      return response.output.message.content[0].text.trim();
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+
+    // Extract text from model output
+    let resultText = '';
+    if (responseBody.content && Array.isArray(responseBody.content)) {
+      resultText = responseBody.content[0].text;
+    } else if (responseBody.generation) {
+      resultText = responseBody.generation;
+    } else if (responseBody.results && responseBody.results[0]) {
+      resultText = responseBody.results[0].outputText;
+    } else if (responseBody.choices && responseBody.choices[0]) {
+      resultText = responseBody.choices[0].text || responseBody.choices[0].message?.content || '';
+    } else {
+      resultText = JSON.stringify(responseBody);
     }
-    
-    return JSON.stringify(response.output);
+
+    return resultText.trim();
   } catch (err) {
     console.error('❌ Amazon Bedrock API Error:', err);
     throw err;
