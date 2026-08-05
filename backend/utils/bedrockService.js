@@ -65,8 +65,8 @@ async function queryBedrockAI(prompt, fleetContext = {}) {
     throw new Error('Amazon Bedrock Client is not initialized.');
   }
 
-  // Model ID: DeepSeek V3 requested by user (or fallback to env variable)
-  const modelId = process.env.BEDROCK_MODEL_ID || 'deepseek.v3-v1:0';
+  // Model ID: Use Llama 3 (DeepSeek is not natively available on AWS Bedrock)
+  const modelId = process.env.BEDROCK_MODEL_ID || 'meta.llama3-8b-instruct-v1:0';
 
   const systemPrompt = `You are "FleetIQ AI", an expert AI assistant for Abhishek's Vehicle Portfolio Fleet Management System.
 You provide helpful, concise, professional, and actionable insights to vehicle owners and drivers.
