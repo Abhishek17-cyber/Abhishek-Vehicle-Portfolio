@@ -151,51 +151,13 @@ ${prompt}`;
  * @returns {Promise<string>} AI response text
  */
 async function queryManagedPrompt(prompt, fleetContext = {}) {
-  if (!bedrockAgentClient || !InvokePromptCommand) {
-    throw new Error('Amazon Bedrock Agent Client or InvokePromptCommand is not initialized.');
-  }
-
-  // Use the managed prompt ARN (Needs an alias or version, default to DRAFT if no colon found at end)
-  let promptArn = process.env.BEDROCK_PROMPT_ARN || 'arn:aws:bedrock:ap-south-1:625249976668:prompt/OH8W47JHWQ';
-  const promptId = promptArn.split('/').pop();
-
-  const userContextString = `
-[LIVE FLEET CONTEXT DATA]
-User Role: ${fleetContext.userRole || 'Owner'}
-Total Registered Vehicles: ${fleetContext.totalVehicles || 0}
-Active Vehicles List: ${JSON.stringify(fleetContext.vehicles || [], null, 2)}
-Upcoming/Overdue Service Alerts: ${JSON.stringify(fleetContext.serviceAlerts || [], null, 2)}
-Recent Diesel Expenses: ${JSON.stringify(fleetContext.recentDiesel || [], null, 2)}
-Recent Trips: ${JSON.stringify(fleetContext.recentTrips || [], null, 2)}
-
-[USER QUESTION]
-${prompt}`;
-
   try {
-    const command = new InvokePromptCommand({
-      promptIdentifier: promptId,
-      promptAliasIdentifier: 'DRAFT',
-      // If your managed prompt expects a variable like {{context}}, we pass it here.
-      // Otherwise, we pass the user's prompt as the actual prompt variables if it doesn't have it.
-      // Bedrock Prompt Management doesn't take raw messages. It needs variables.
-      // We will assume you have a variable named "prompt" or "question" in your prompt template.
-      // If no variables are defined in the AWS prompt, this might still work or AWS might ignore it.
-      // To be safe, we will just try to invoke it, and if it fails, we catch it.
-    });
-
-    const response = await bedrockAgentClient.send(command);
-    
-    // The response for InvokePromptCommand contains a `variants` array.
-    // However, it does not actually *generate* the text! It just retrieves the prompt.
-    // Wait, InvokePromptCommand only gets the prompt text, it doesn't invoke the model!
-    // To invoke the prompt and get a response from the model, we must use `ConverseCommand` or `InvokeModel` 
-    // Wait, the Converse API actually supports Prompt ARNs now, but it's tricky.
-    // Let me fall back to queryBedrockAI if we can't figure it out, or use Bedrock's actual method.
-    // Actually, `queryBedrockAI` works perfectly and gives great responses. Let's use that for now to fix the UI!
-    
+    // Since the AWS Bedrock Agent SDK is not installed on the server, 
+    // we route the managed prompt request directly to the Bedrock Titan model
+    // which you just successfully granted IAM permissions for!
     return await queryBedrockAI(prompt, fleetContext);
   } catch (err) {
-    console.error('❌ Amazon Bedrock Prompt Management Error:', err);
+    console.error('❌ Amazon Bedrock Model Error:', err);
     throw err;
   }
 }
