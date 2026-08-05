@@ -24,7 +24,7 @@ try {
 }
 
 // Initialize Bedrock Runtime Client
-const region = process.env.AWS_REGION || 'ap-south-1';
+const region = process.env.AWS_REGION || 'us-west-2';
 let bedrockClient = null;
 let bedrockAgentClient = null;
 
