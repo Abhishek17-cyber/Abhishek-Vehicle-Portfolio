@@ -65,8 +65,8 @@ async function queryBedrockAI(prompt, fleetContext = {}) {
     throw new Error('Amazon Bedrock Client is not initialized.');
   }
 
-  // Model ID: Amazon Titan Text Express (Enabled by default on all AWS accounts)
-  const modelId = process.env.BEDROCK_MODEL_ID || 'amazon.titan-text-express-v1';
+  // Model ID: DeepSeek V3 requested by user (or fallback to env variable)
+  const modelId = process.env.BEDROCK_MODEL_ID || 'deepseek.v3-v1:0';
 
   const systemPrompt = `You are "FleetIQ AI", an expert AI assistant for Abhishek's Vehicle Portfolio Fleet Management System.
 You provide helpful, concise, professional, and actionable insights to vehicle owners and drivers.
@@ -87,57 +87,32 @@ Recent Trips: ${JSON.stringify(fleetContext.recentTrips || [], null, 2)}
 ${prompt}`;
 
   try {
-    // Construct payload depending on model family
-    let payload = {};
-    if (modelId.includes('anthropic')) {
-      payload = {
-        anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: userContextString
-          }
-        ]
-      };
-    } else if (modelId.includes('meta')) {
-      payload = {
-        prompt: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${userContextString}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n`,
-        max_gen_len: 1000,
-        temperature: 0.5
-      };
-    } else {
-      // Default Titan / Generic format
-      payload = {
-        inputText: `${systemPrompt}\n\n${userContextString}`,
-        textGenerationConfig: { maxTokenCount: 1000, temperature: 0.5 }
-      };
+    if (!ConverseCommand) {
+      throw new Error('ConverseCommand is not available in your AWS SDK version.');
     }
 
-    const command = new InvokeModelCommand({
+    const command = new ConverseCommand({
       modelId: modelId,
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify(payload)
+      messages: [
+        {
+          role: "user",
+          content: [{ text: userContextString }]
+        }
+      ],
+      system: [{ text: systemPrompt }],
+      inferenceConfig: {
+        maxTokens: 1000,
+        temperature: 0.5
+      }
     });
 
     const response = await bedrockClient.send(command);
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-
-    // Extract text from model output
-    let resultText = '';
-    if (responseBody.content && Array.isArray(responseBody.content)) {
-      resultText = responseBody.content[0].text;
-    } else if (responseBody.generation) {
-      resultText = responseBody.generation;
-    } else if (responseBody.results && responseBody.results[0]) {
-      resultText = responseBody.results[0].outputText;
-    } else {
-      resultText = JSON.stringify(responseBody);
+    
+    if (response.output && response.output.message && response.output.message.content) {
+      return response.output.message.content[0].text.trim();
     }
-
-    return resultText.trim();
+    
+    return JSON.stringify(response.output);
   } catch (err) {
     console.error('❌ Amazon Bedrock API Error:', err);
     throw err;
