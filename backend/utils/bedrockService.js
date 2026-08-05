@@ -136,6 +136,9 @@ ${prompt}`;
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
+    // LOG THIS SO WE CAN SEE IT IN PM2 LOGS!
+    console.log('🤖 RAW BEDROCK RESPONSE:', JSON.stringify(responseBody, null, 2));
+
     // Extract text from model output
     let resultText = '';
     if (responseBody.content && Array.isArray(responseBody.content)) {
@@ -146,6 +149,8 @@ ${prompt}`;
       resultText = responseBody.results[0].outputText;
     } else if (responseBody.choices && responseBody.choices[0]) {
       resultText = responseBody.choices[0].text || responseBody.choices[0].message?.content || '';
+    } else if (responseBody.outputs && responseBody.outputs[0]) {
+      resultText = responseBody.outputs[0].text || '';
     } else {
       resultText = JSON.stringify(responseBody);
     }
