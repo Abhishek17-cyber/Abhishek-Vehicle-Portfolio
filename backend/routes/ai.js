@@ -38,16 +38,16 @@ router.post('/chat', verifyToken, async (req, res) => {
     );
 
     const [recentDiesel] = await db.execute(
-      `SELECT d.litres, d.cost, d.fuel_date, v.vehicle_number
-       FROM diesel d
+      `SELECT d.liters as litres, d.cost, d.refuel_datetime as fuel_date, v.vehicle_number
+       FROM diesel_records d
        JOIN vehicles v ON d.vehicle_id = v.id
        WHERE ${isDriver ? 'v.driver_user_id = ?' : 'v.owner_id = ?'}
-       ORDER BY d.fuel_date DESC LIMIT 15`,
+       ORDER BY d.refuel_datetime DESC LIMIT 15`,
       [req.user.id]
     );
 
     const [recentTrips] = await db.execute(
-      `SELECT t.start_location, t.end_location, t.trip_date, t.revenue, t.fuel_cost, v.vehicle_number
+      `SELECT t.source_address as start_location, t.destination_address as end_location, t.trip_date, t.revenue, 0 as fuel_cost, v.vehicle_number
        FROM trips t
        JOIN vehicles v ON t.vehicle_id = v.id
        WHERE ${isDriver ? 'v.driver_user_id = ?' : 'v.owner_id = ?'}
